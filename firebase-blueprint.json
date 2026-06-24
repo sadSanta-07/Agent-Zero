@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "An autonomous task managed by the multi-agent system",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the task"
+        },
+        "userId": {
+          "type": "string",
+          "description": "The Firebase User UID who created the task"
+        },
+        "rawText": {
+          "type": "string",
+          "description": "The raw input text entered by the user"
+        },
+        "title": {
+          "type": "string",
+          "description": "Triaged task title"
+        },
+        "deadline": {
+          "type": "string",
+          "description": "Triaged deadline"
+        },
+        "entities": {
+          "type": "array",
+          "description": "Entities involved in the task"
+        },
+        "urgency": {
+          "type": "number",
+          "description": "The True Urgency Index calculated score from 0.0 to 10.0"
+        },
+        "consequences": {
+          "type": "string",
+          "description": "The simulated consequences if missed"
+        },
+        "stakes": {
+          "type": "string",
+          "description": "The anti-goal pledge/stakes"
+        },
+        "draft": {
+          "type": "string",
+          "description": "Autonomously generated solution draft"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of task execution",
+          "enum": ["triage", "calibrating", "proxy_ready", "executed"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp"
+        }
+      },
+      "required": ["userId", "rawText", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "User specific tasks managed by Agent Zero"
+    }
+  }
+}
