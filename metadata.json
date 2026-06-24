@@ -1,0 +1,6 @@
+{
+  "name": "Agent Zero",
+  "description": "An anti-procrastination productivity app designed to autonomously execute tasks using a multi-agent AI architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
