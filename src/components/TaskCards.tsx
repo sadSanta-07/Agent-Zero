@@ -221,41 +221,41 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
 
 
 // ---------------------------------------------------------------------------
-// 4. AMBIGUOUS CHOICE CARD (UPDATED)
+// 4. AMBIGUOUS CHOICE CARD (UPDATED: MULTI-SELECT & FULL PREVIEWS)
 // ---------------------------------------------------------------------------
 export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
   task,
   handleDeleteTask,
   handleExecuteProxy
 }) => {
-  const [selectedRoute, setSelectedRoute] = useState<'email' | 'calendar' | null>(null);
+  const [routes, setRoutes] = useState({ email: false, calendar: false });
 
   const handleExecute = async () => {
-    if (!selectedRoute) return;
+    if (!routes.email && !routes.calendar) return;
 
-    if (selectedRoute === 'email') {
-      await handleExecuteProxy({ ...task, intent_type: 'EMAIL', calendarEvent: undefined });
-    } else if (selectedRoute === 'calendar') {
-      await handleExecuteProxy({ ...task, intent_type: 'CALENDAR', draft: "" });
+    // If both are selected, trigger Shadow Chronos (Multi-Channel)
+    if (routes.email && routes.calendar) {
+      await handleExecuteProxy({ ...task, isShadowChronos: true });
+    } else if (routes.email) {
+      await handleExecuteProxy({ ...task, intent_type: 'EMAIL', calendarEvent: undefined as any }); 
+    } else if (routes.calendar) {
+      await handleExecuteProxy({ ...task, intent_type: 'CALENDAR', draft: undefined as any }); 
     }
   };
 
-  // Extract the drafted subject line if it exists
-  const parsedSubject = task.draft ? parseEmailDraft(task.draft).subject : null;
+  const parsedEmail = task.draft ? parseEmailDraft(task.draft) : null;
 
   return (
     <div id={`ambiguous-card-${task.id}`} className="bg-brand-surface border border-yellow-400 p-5 rounded-[3px] flex flex-col gap-4 shadow-sm">
       <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-[11px] font-space-mono font-medium p-2.5 rounded-xs flex items-center gap-2">
         <AlertTriangle className="w-4 h-4 shrink-0 text-yellow-600" />
-        <span className="uppercase tracking-wider">Manual Disambiguation Required // Select Execution Route</span>
+        <span className="uppercase tracking-wider">Manual Disambiguation Required // Select Execution Routes</span>
       </div>
 
       <div className="flex justify-between items-start gap-4 mt-1">
         <div className="flex-1">
           <h4 className="text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary">{task.title}</h4>
         </div>
-        
-        {/* FIX 1: Display the Urgency Index here */}
         <div className="text-right flex items-start gap-6 shrink-0">
           <div>
             <div className="font-space-mono text-[10px] text-brand-text-secondary uppercase tracking-wider whitespace-nowrap">Urgency Index</div>
@@ -263,9 +263,8 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
               {(task.urgency || 5.0).toFixed(1)}/10
             </div>
           </div>
-          <button onClick={() => handleDeleteTask(task.id)} className="text-brand-text-secondary hover:text-red-700 p-1"
-            title="Remove Task"
-            aria-label="Remove Task"><Trash2 className="w-4 h-4" />
+          <button onClick={() => handleDeleteTask(task.id)} className="text-brand-text-secondary hover:text-red-700 p-1" title="Remove Task">
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -279,50 +278,73 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
 
       {task.status !== 'executed' ? (
         <div className="flex flex-col gap-3 mt-2">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
-            {/* FIX 2: Dynamic Email Choice Preview */}
-            <button
-              onClick={() => setSelectedRoute('email')}
-              className={`p-4 border rounded-[3px] text-left transition-all ${selectedRoute === 'email' ? 'border-brand-primary bg-brand-primary/5' : 'border-brand-border bg-brand-bg hover:border-brand-text-secondary'}`}
+            {/* EMAIL SELECTOR WITH FULL PREVIEW */}
+            <div 
+              onClick={() => setRoutes(prev => ({ ...prev, email: !prev.email }))}
+              className={`p-4 border rounded-[3px] text-left transition-all cursor-pointer flex flex-col h-full ${routes.email ? 'border-brand-primary bg-brand-primary/5' : 'border-brand-border bg-brand-bg hover:border-brand-text-secondary'}`}
             >
-              <div className="flex items-center gap-2 mb-2 text-brand-text-primary">
-                <Mail className="w-4 h-4" />
-                <span className="font-space-mono text-[12px] font-bold uppercase tracking-wider">Draft Email</span>
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2 text-brand-text-primary">
+                  <Mail className="w-4 h-4" />
+                  <span className="font-space-mono text-[12px] font-bold uppercase tracking-wider">Draft Email</span>
+                </div>
+                <div className={`w-4 h-4 rounded-full border ${routes.email ? 'bg-brand-primary border-brand-primary' : 'border-brand-text-secondary'}`}></div>
               </div>
-              <div className="text-[11px] font-public-sans text-brand-text-secondary font-medium italic">
-                {parsedSubject ? `Subject: "${parsedSubject}"` : "Proceed with sending a communication update."}
-              </div>
-            </button>
+              {parsedEmail ? (
+                <div className="text-[11px] font-space-mono space-y-1.5 bg-brand-surface p-2 border border-brand-border rounded-xs text-brand-text-primary flex-1">
+                   <div><strong className="text-brand-text-secondary">To:</strong> {parsedEmail.to}</div>
+                   <div><strong className="text-brand-text-secondary">Subj:</strong> {parsedEmail.subject}</div>
+                   <div className="border-t border-brand-border pt-1 mt-1">
+                     <span className="whitespace-pre-wrap leading-relaxed block max-h-24 overflow-y-auto">{parsedEmail.body}</span>
+                   </div>
+                </div>
+              ) : (
+                <div className="text-[11px] font-public-sans text-brand-text-secondary">No email draft generated.</div>
+              )}
+            </div>
 
-            {/* FIX 2: Dynamic Calendar Choice Preview */}
-            <button
-              onClick={() => setSelectedRoute('calendar')}
-              className={`p-4 border rounded-[3px] text-left transition-all ${selectedRoute === 'calendar' ? 'border-brand-primary bg-brand-primary/5' : 'border-brand-border bg-brand-bg hover:border-brand-text-secondary'}`}
+            {/* CALENDAR SELECTOR WITH FULL PREVIEW */}
+            <div 
+              onClick={() => setRoutes(prev => ({ ...prev, calendar: !prev.calendar }))}
+              className={`p-4 border rounded-[3px] text-left transition-all cursor-pointer flex flex-col h-full ${routes.calendar ? 'border-brand-primary bg-brand-primary/5' : 'border-brand-border bg-brand-bg hover:border-brand-text-secondary'}`}
             >
-              <div className="flex items-center gap-2 mb-2 text-brand-text-primary">
-                <Calendar className="w-4 h-4" />
-                <span className="font-space-mono text-[12px] font-bold uppercase tracking-wider">Block Calendar</span>
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2 text-brand-text-primary">
+                  <Calendar className="w-4 h-4" />
+                  <span className="font-space-mono text-[12px] font-bold uppercase tracking-wider">Block Calendar</span>
+                </div>
+                <div className={`w-4 h-4 rounded-full border ${routes.calendar ? 'bg-brand-primary border-brand-primary' : 'border-brand-text-secondary'}`}></div>
               </div>
-              <div className="text-[11px] font-public-sans text-brand-text-secondary font-medium italic">
-                {task.calendarEvent?.title ? `Event: "${task.calendarEvent.title}"` : "Proceed with scheduling an event block."}
-              </div>
-            </button>
+              {task.calendarEvent ? (
+                <div className="text-[11px] font-space-mono space-y-1.5 bg-brand-surface p-2 border border-brand-border rounded-xs text-brand-text-primary flex-1">
+                  <div><strong className="text-brand-text-secondary">Event:</strong> {task.calendarEvent.title}</div>
+                  <div><strong className="text-brand-text-secondary">Time:</strong> {new Date(task.calendarEvent.startTime || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  <div className="border-t border-brand-border pt-1 mt-1">
+                    <span className="whitespace-pre-wrap leading-relaxed block max-h-24 overflow-y-auto">{task.calendarEvent.description}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-[11px] font-public-sans text-brand-text-secondary">No calendar event generated.</div>
+              )}
+            </div>
           </div>
 
           <button
             onClick={handleExecute}
-            disabled={!selectedRoute}
-            className={`w-full py-3 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-public-sans shadow-sm ${selectedRoute ? 'bg-brand-primary text-brand-surface hover:bg-brand-hover cursor-pointer' : 'bg-brand-border text-brand-text-secondary cursor-not-allowed'}`}
+            disabled={!routes.email && !routes.calendar}
+            className={`w-full py-3 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-public-sans shadow-sm mt-2 ${
+              (routes.email || routes.calendar) ? 'bg-brand-primary text-brand-surface hover:bg-brand-hover cursor-pointer' : 'bg-brand-border text-brand-text-secondary cursor-not-allowed'
+            }`}
           >
-            <Play className={`w-4 h-4 ${selectedRoute ? 'fill-brand-surface' : ''}`} />
-            <span>Execute Selected Route</span>
+            <Play className={`w-4 h-4 ${(routes.email || routes.calendar) ? 'fill-brand-surface' : ''}`} />
+            <span>{routes.email && routes.calendar ? "Execute Dual Workflow (Shadow Chronos)" : "Execute Selected Route"}</span>
           </button>
 
-          {/* FIX 3: Tertiary "Dismiss" Button */}
           <button
              onClick={() => handleDeleteTask(task.id)}
-             className="w-full py-2 text-[12px] font-space-mono uppercase tracking-wider text-brand-text-secondary hover:text-brand-text-primary transition-colors mt-1"
+             className="w-full py-2 text-[12px] font-space-mono uppercase tracking-wider text-brand-text-secondary hover:text-brand-text-primary transition-colors mt-1 cursor-pointer"
           >
              Acknowledge & Dismiss Task
           </button>
