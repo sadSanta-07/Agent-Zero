@@ -1,3 +1,4 @@
+import { fileURLToPath } from "url";
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
@@ -33,7 +34,6 @@ if (isRealApiKey) {
   }
 }
 
-// Helper to call generateContent with automatic retry on fallback models
 async function generateContentWithFallback(aiInstance: GoogleGenAI, options: { contents: any; config: any }) {
   const models = [
     "gemini-2.5-flash",
@@ -57,6 +57,26 @@ async function generateContentWithFallback(aiInstance: GoogleGenAI, options: { c
     }
   }
   throw lastError || new Error("Failed to invoke any AI model.");
+}
+
+// Helper Utility for Email Formatting
+function makeRawEmail(to: string, from: string, subject: string, message: string) {
+  const str = [
+    `To: ${to}`,
+    `From: ${from}`,
+    `Subject: ${subject}`,
+    "Content-Type: text/plain; charset=\"UTF-8\"",
+    "MIME-Version: 1.0",
+    "Content-Transfer-Encoding: 7bit",
+    "",
+    message
+  ].join("\r\n");
+
+  return Buffer.from(str)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 // 1. Triage & Agent Execution API Endpoint
@@ -160,13 +180,11 @@ app.post("/api/agents/triage", async (req, res) => {
         const isThreatKeyword = textLower.includes("ignore") || textLower.includes("postpone") || textLower.includes("avoid");
         const isHighStakesContext = textLower.includes("outage") || textLower.includes("production") || textLower.includes("server") || textLower.includes("fired");
 
-        // --- THE FIX: Route threats and high stakes to AMBIGUOUS instead of forcing emails ---
         if ((isThreatKeyword && isHighStakesContext) || parsedResult.urgency > 8.5) {
           parsedResult.intent_type = 'AMBIGUOUS';
           parsedResult.isShadowChronos = false;
-          parsedResult.draft = ""; // Strip out any hallucinated emails!
-          parsedResult.calendarEvent = null; // Clear the calendar so the user can choose
-
+          parsedResult.draft = ""; 
+          parsedResult.calendarEvent = null; 
           parsedResult.thoughts.push(`[Triage Agent] CRITICAL DELAY INTERCEPTED // ROUTING TO DISAMBIGUATION`);
         }
 
@@ -227,7 +245,7 @@ app.post("/api/agents/triage", async (req, res) => {
     };
   } else if (intent_type === 'EMAIL') {
     draft = `TO: ${targetRecipient || 'team@company.com'}\nSUBJECT: Update\n\nBODY:\n${rawText}`;
-  } // If AMBIGUOUS or MEMORY, draft and calendarEvent remain empty!
+  } 
 
   res.json({
     title,
@@ -413,7 +431,6 @@ app.post("/api/execute-proxy", async (req, res) => {
       });
     }
   } else {
-    // Guest Mode / Simulated Dispatch
     console.log(`[Core Execution Gateway] Guest Mode detected. Simulating API dispatch...`);
     await new Promise((resolve) => setTimeout(resolve, 800));
 
@@ -529,27 +546,11 @@ app.post("/api/agents/voice", async (req, res) => {
   });
 });
 
-function makeRawEmail(to: string, from: string, subject: string, message: string) {
-  const str = [
-    `To: ${to}`,
-    `From: ${from}`,
-    `Subject: ${subject}`,
-    "Content-Type: text/plain; charset=\"UTF-8\"",
-    "MIME-Version: 1.0",
-    "Content-Transfer-Encoding: 7bit",
-    "",
-    message
-  ].join("\r\n");
-
-  return Buffer.from(str)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-// Serve APIs first, then deal with Vite static assets
+// 5. Global Production Server/Asset Delivery Core
 const startServer = async () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
   if (process.env.NODE_ENV !== "production") {
     console.log("Setting up Vite developmental server...");
     const vite = await createViteServer({
@@ -559,7 +560,8 @@ const startServer = async () => {
     app.use(vite.middlewares);
   } else {
     console.log("Serving static production build from /dist...");
-    const distPath = path.join(process.cwd(), "dist");
+    
+    const distPath = path.join(__dirname, "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
