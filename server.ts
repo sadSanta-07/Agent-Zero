@@ -10,12 +10,12 @@ dotenv.config();
 
 const app = express();
 
+// FIX 1: Opened CORS to '*' so local dev and Firebase prod both work seamlessly during the hackathon
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://agentzero-18082.web.app");
+  res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
 
-  // Intercept preflight OPTIONS request
   if (req.method === "OPTIONS") {
     res.sendStatus(200);
   } else {
@@ -109,6 +109,7 @@ app.post("/api/agents/triage", async (req, res) => {
            If the raw text refers to a name or key in this matrix, resolve this name to the stored email address.`
         : "";
 
+      // FIX 2: Updated Prompt to explicitly demand BOTH drafts for AMBIGUOUS tasks
       const prompt = `You are the central intelligence core of an enterprise-grade automated triage system designed to intercept unstructured tasks and generate structured execution workflows.
       We have intercepted a new user task or critical blocker: "${rawText}"
       
@@ -120,27 +121,19 @@ app.post("/api/agents/triage", async (req, res) => {
          - **STRICT CLASSIFICATION RULES**:
            - 'EMAIL': ONLY use if the user explicitly needs to send a message to another human/entity.
            - 'CALENDAR': ONLY use if the task is a meeting, appointment, or time-blocked event. Sets \`isCalendarEvent\` to true.
-           - 'AMBIGUOUS': Use for critical blockers, active avoidance ("I'll do it later", "ignore this"), or high-stakes outages ("production down") where the user needs a choice between a calendar block or an email update.
-           - 'MEMORY': Use for generic todos, remembering facts, or system mappings ("record Rahul's email") where NO communication is needed.
-         - **ENTITY FIX**: NEVER extract generic verbs (like 'ignore', 'cancel', 'postpone', 'later', 'tomorrow', 'delay') into email addresses or Entity keys.
+           - 'AMBIGUOUS': Use for critical blockers, active avoidance ("I'll do it later"), or high-stakes outages. **CRITICAL: For AMBIGUOUS, you MUST generate BOTH a draft email AND a calendarEvent so the user can choose.**
+           - 'MEMORY': Use for generic todos or system mappings where NO communication is needed.
+         - **ENTITY FIX**: NEVER extract generic verbs (like 'ignore', 'cancel', 'postpone') into email addresses or Entity keys.
       2. **The Calibrator Agent**: Assigns a precise "Urgency Index" score from 0.0 to 10.0.
-         - 1.0 - 4.0: Low impact, casual personal tasks.
-         - 5.0 - 7.5: Standard professional/academic deadlines.
-         - 7.6 - 8.9: High value, tight deadlines.
-         - 9.0 - 10.0: CRITICAL ESCALATION. Reserved STRICTLY for active, severe crises.
       3. **The Proxy Agent**: Creates a fully prepared automated workflow draft.
-         - If \`intent_type\` is 'EMAIL', draft the email in the \`draft\` field using this exact format:
-           TO: <recipient-email-address>
-           SUBJECT: <subject>
-           BODY: <email-text>
-         - If \`intent_type\` is 'CALENDAR', construct a Calendar Event in the \`calendarEvent\` object field. Leave \`draft\` completely empty ("").
-         - **CRITICAL FIX**: If \`intent_type\` is 'AMBIGUOUS' or 'MEMORY', you MUST leave the \`draft\` field COMPLETELY EMPTY (""). DO NOT invent fake emails like 'self@internal.system' or 'operator@internal.system'.
+         - If 'EMAIL', draft the email.
+         - If 'CALENDAR', construct a Calendar Event.
+         - If 'AMBIGUOUS', draft BOTH the email and the Calendar Event.
+         - If 'MEMORY', leave both entirely empty.
 
-      Prepare a rigorous system audit log trace in the "thoughts" array with 4-5 items showing the structured reasoning.
-      Current date/time context: ${new Date().toISOString()}. June 2026.
-      
-      Output strictly JSON matching this requirement. Do not add markdown around it.`;
+      Output strictly JSON matching the required schema. Do not add markdown around it.`;
 
+      // FIX 3: Removed strict required constraints on draft and calendarEvent so the AI doesn't crash if it omits one
       const response = await generateContentWithFallback(ai, {
         contents: prompt,
         config: {
@@ -148,14 +141,14 @@ app.post("/api/agents/triage", async (req, res) => {
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              title: { type: Type.STRING, description: "Short concise task summary, maximum 6 words." },
-              intent_type: { type: Type.STRING, enum: ["EMAIL", "CALENDAR", "AMBIGUOUS", "MEMORY"], description: "Must be one of: 'EMAIL', 'CALENDAR', 'AMBIGUOUS', or 'MEMORY'." },
+              title: { type: Type.STRING },
+              intent_type: { type: Type.STRING, enum: ["EMAIL", "CALENDAR", "AMBIGUOUS", "MEMORY"] },
               deadline: { type: Type.STRING },
               entities: { type: Type.ARRAY, items: { type: Type.STRING } },
               urgency: { type: Type.NUMBER },
               consequences: { type: Type.STRING },
               stakes: { type: Type.STRING },
-              draft: { type: Type.STRING, description: "The fully drafted solution. Must be empty string if AMBIGUOUS or MEMORY." },
+              draft: { type: Type.STRING },
               isCalendarEvent: { type: Type.BOOLEAN },
               calendarEvent: {
                 type: Type.OBJECT,
@@ -164,8 +157,7 @@ app.post("/api/agents/triage", async (req, res) => {
                   startTime: { type: Type.STRING },
                   endTime: { type: Type.STRING },
                   description: { type: Type.STRING }
-                },
-                required: ["title", "startTime", "endTime", "description"]
+                }
               },
               extractedEntities: {
                 type: Type.ARRAY,
@@ -175,13 +167,12 @@ app.post("/api/agents/triage", async (req, res) => {
                     key: { type: Type.STRING },
                     value: { type: Type.STRING },
                     type: { type: Type.STRING }
-                  },
-                  required: ["key", "value", "type"]
+                  }
                 }
               },
               thoughts: { type: Type.ARRAY, items: { type: Type.STRING } }
             },
-            required: ["title", "intent_type", "deadline", "entities", "urgency", "consequences", "stakes", "draft", "isCalendarEvent", "calendarEvent", "extractedEntities", "thoughts"]
+            required: ["title", "intent_type", "deadline", "urgency", "isCalendarEvent", "thoughts"]
           }
         }
       });
@@ -193,11 +184,12 @@ app.post("/api/agents/triage", async (req, res) => {
         const isThreatKeyword = textLower.includes("ignore") || textLower.includes("postpone") || textLower.includes("avoid");
         const isHighStakesContext = textLower.includes("outage") || textLower.includes("production") || textLower.includes("server") || textLower.includes("fired");
 
+        // FIX 4: The Logic Wipeout Bug is completely removed here.
+        // We set it to AMBIGUOUS, but we KEEP the generated drafts!
         if ((isThreatKeyword && isHighStakesContext) || parsedResult.urgency > 8.5) {
           parsedResult.intent_type = 'AMBIGUOUS';
           parsedResult.isShadowChronos = false;
-          parsedResult.draft = "";
-          parsedResult.calendarEvent = null;
+          // DRAFT AND CALENDAR EVENT ARE PRESERVED FOR THE UI TO DISPLAY!
           parsedResult.thoughts.push(`[Triage Agent] CRITICAL DELAY INTERCEPTED // ROUTING TO DISAMBIGUATION`);
         }
 
@@ -249,15 +241,18 @@ app.post("/api/agents/triage", async (req, res) => {
   let draft = "";
   let calendarEvent = null;
 
-  if (intent_type === 'CALENDAR') {
+  // FIX 5: Ensure fallback simulation also populates both for AMBIGUOUS
+  if (intent_type === 'CALENDAR' || intent_type === 'AMBIGUOUS') {
     calendarEvent = {
       title: title || "Scheduled Session",
       startTime: new Date(Date.now() + 24 * 3600000).toISOString(),
       endTime: new Date(Date.now() + 24 * 3600000 + 3600000).toISOString(),
       description: `Automated calendar reservation.`
     };
-  } else if (intent_type === 'EMAIL') {
-    draft = `TO: ${targetRecipient || 'team@company.com'}\nSUBJECT: Update\n\nBODY:\n${rawText}`;
+  } 
+  
+  if (intent_type === 'EMAIL' || intent_type === 'AMBIGUOUS') {
+    draft = `TO: ${targetRecipient || 'team@company.com'}\nSUBJECT: Urgent Update: ${title}\n\nBODY:\n${rawText}`;
   }
 
   res.json({
@@ -483,21 +478,12 @@ app.post("/api/agents/voice", async (req, res) => {
       Listen to the speech audio carefully, extract the spoken text meaning, and use your three sub-agents to process it:
       1. **The Triage Agent**: Destructures the spoken task, extracts the primary entities (identifying or naming external parties, companies, individuals, or default targets), and identifies/infers the most accurate deadline.
          - CRITICAL: If the vocal intention indicates a time-based event, meeting, appointment, scheduling item, synchronization session or calendar entry, classify it as a calendar event by setting the \`isCalendarEvent\` boolean to true.
-      2. **The Calibrator Agent**: Assigns a precise "Urgency Index" score from 0.0 to 10.0 based on the realistic projected business or personal consequences of missing this deadline. It also devises a "Stakes Assessment" detailing the impact of failure (e.g., 'Financial Penalty', 'Account Health Risk', 'Reputation Damage').
+      2. **The Calibrator Agent**: Assigns a precise "Urgency Index" score from 0.0 to 10.0 based on the realistic projected business or personal consequences of missing this deadline. It also devises a "Stakes Assessment" detailing the impact of failure.
       3. **The Proxy Agent**: Creates a fully prepared automated workflow draft.
          - CRITICAL: If \`isCalendarEvent\` is true, construct a complete Calendar Event in the \`calendarEvent\` object field.
          - If \`isCalendarEvent\` is false, draft an email in the \`draft\` field.
-         - NO HARDCODING CONSTRAINT: Do not generate any hardcoded templates. Structure the draft with 'TO', 'SUBJECT' and 'BODY' fields explicitly:
-           TO: <recipient-email-address>
-           SUBJECT: <email-subject-parsed-from-intent>
 
-           BODY:
-           <email-body-text-which-MUST-match-user-intent-exactly>
-
-      Prepare a rigorous system audit log trace in the "thoughts" array with 4-5 items showing the structured reasoning step-by-step from [Triage Agent], [Calibrator Agent], and [Proxy Agent]. Make the logs sound clinical, professional, and data-driven.
-      Current date/time context: ${new Date().toISOString()}. June 2026.
-      
-      Output strictly JSON matching this requirement. Do not add markdown around it.`;
+      Output strictly JSON matching the required schema. Do not add markdown around it.`;
 
       const response = await generateContentWithFallback(ai, {
         contents: [audioPart, prompt],
@@ -506,14 +492,14 @@ app.post("/api/agents/voice", async (req, res) => {
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              title: { type: Type.STRING, description: "Short concise task summary, maximum 6 words." },
-              deadline: { type: Type.STRING, description: "Extracted or inferred task deadline phrase." },
-              entities: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of entities involved." },
-              urgency: { type: Type.NUMBER, description: "Urgency Index calculated score from 0.0 to 10.0." },
-              consequences: { type: Type.STRING, description: "A realistic business or personal consequence of failing this task." },
-              stakes: { type: Type.STRING, description: "The projected impact, e.g., 'SLA Violation' or 'Reputation Risk'." },
-              draft: { type: Type.STRING, description: "The fully drafted solution writeup ready for dispatch." },
-              isCalendarEvent: { type: Type.BOOLEAN, description: "True if the user's task is classified as a time-based event." },
+              title: { type: Type.STRING },
+              deadline: { type: Type.STRING },
+              entities: { type: Type.ARRAY, items: { type: Type.STRING } },
+              urgency: { type: Type.NUMBER },
+              consequences: { type: Type.STRING },
+              stakes: { type: Type.STRING },
+              draft: { type: Type.STRING },
+              isCalendarEvent: { type: Type.BOOLEAN },
               calendarEvent: {
                 type: Type.OBJECT,
                 properties: {
@@ -521,12 +507,11 @@ app.post("/api/agents/voice", async (req, res) => {
                   startTime: { type: Type.STRING },
                   endTime: { type: Type.STRING },
                   description: { type: Type.STRING }
-                },
-                required: ["title", "startTime", "endTime", "description"]
+                }
               },
-              thoughts: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Step-by-step system audit log thoughts." }
+              thoughts: { type: Type.ARRAY, items: { type: Type.STRING } }
             },
-            required: ["title", "deadline", "entities", "urgency", "consequences", "stakes", "draft", "isCalendarEvent", "calendarEvent", "thoughts"]
+            required: ["title", "deadline", "urgency", "isCalendarEvent", "thoughts"]
           }
         }
       });
@@ -550,7 +535,7 @@ app.post("/api/agents/voice", async (req, res) => {
     stakes: "Workflow Misalignment Risk",
     draft: "TO: system-ops@internal.network\nSUBJECT: Automated Voice Relay Execution\n\nTo Whom It May Concern,\n\nThis is an automated proxy task compiled from voice transcript capture. The original input was logged and evaluated. Full verification protocols have been applied.\n\nRegards,\nSystem Automation Node",
     isCalendarEvent: false,
-    calendarEvent: { title: "", startTime: "", endTime: "", description: "" },
+    calendarEvent: null,
     thoughts: [
       `[Triage Agent] Processing raw audio stream. Running vocal analysis...`,
       `[Calibrator Agent] Calculated frequency attributes evaluated. Urgency Index locked at 8.2.`,
