@@ -82,7 +82,7 @@ export default function App() {
     handleFirestoreError,
   });
 
-  const { handleExecuteProxy, taskScopeWarnings } = useProxy({
+const { handleExecuteProxy, taskScopeWarnings } = useProxy({
     user,
     googleAccessToken,
     setTasks,
