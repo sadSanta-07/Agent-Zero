@@ -1,3 +1,6 @@
+// vite-env.d.ts
+
+/// <reference types="vite/client" />
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
