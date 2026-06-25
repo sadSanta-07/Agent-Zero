@@ -215,7 +215,12 @@ app.post("/api/agents/triage", async (req, res) => {
 
   // --- LOCAL SIMULATION FALLBACK ---
   const textLower = rawText.toLowerCase();
-  const isCalendarEvent = textLower.includes("schedule") || textLower.includes("calendar") || textLower.includes("meeting");
+  const isCalendarEvent = textLower.includes("schedule") || 
+                          textLower.includes("calendar") || 
+                          textLower.includes("meeting") || 
+                          textLower.includes("test") || 
+                          textLower.includes("appointment") || 
+                          /am|pm|tomorrow|today/i.test(textLower);
 
   const cleanText = rawText.replace(/['"]/g, '');
   const words = cleanText.trim().split(/\s+/);
