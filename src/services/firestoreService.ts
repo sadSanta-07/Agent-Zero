@@ -7,7 +7,6 @@ import {
   query,
   updateDoc,
   where,
-  type DocumentData,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -39,19 +38,22 @@ export function subscribeToUserTasks(
   onError: (error: Error) => void,
 ): Unsubscribe {
   const tasksQuery = query(collection(db, "tasks"), where("userId", "==", userId));
+  
   return onSnapshot(tasksQuery, (snapshot) => {
     const tasks = snapshot.docs
       .map((taskDocument) => ({ id: taskDocument.id, ...taskDocument.data() }) as Task)
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+      
     onTasks(tasks);
   }, onError);
 }
 
-export function createTaskDocument(data: DocumentData) {
+
+export function createTaskDocument(data: Omit<Task, 'id'>) {
   return addDoc(collection(db, "tasks"), data);
 }
 
-export function updateTaskDocument(taskId: string, data: DocumentData) {
+export function updateTaskDocument(taskId: string, data: Partial<Task>) {
   return updateDoc(doc(db, "tasks", taskId), data);
 }
 
