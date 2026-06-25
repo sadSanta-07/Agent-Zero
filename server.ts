@@ -183,8 +183,8 @@ app.post("/api/agents/triage", async (req, res) => {
         if ((isThreatKeyword && isHighStakesContext) || parsedResult.urgency > 8.5) {
           parsedResult.intent_type = 'AMBIGUOUS';
           parsedResult.isShadowChronos = false;
-          parsedResult.draft = ""; 
-          parsedResult.calendarEvent = null; 
+          parsedResult.draft = "";
+          parsedResult.calendarEvent = null;
           parsedResult.thoughts.push(`[Triage Agent] CRITICAL DELAY INTERCEPTED // ROUTING TO DISAMBIGUATION`);
         }
 
@@ -245,7 +245,7 @@ app.post("/api/agents/triage", async (req, res) => {
     };
   } else if (intent_type === 'EMAIL') {
     draft = `TO: ${targetRecipient || 'team@company.com'}\nSUBJECT: Update\n\nBODY:\n${rawText}`;
-  } 
+  }
 
   res.json({
     title,
@@ -551,6 +551,7 @@ const startServer = async () => {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
+  const FINAL_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
   if (process.env.NODE_ENV !== "production") {
     console.log("Setting up Vite developmental server...");
     const vite = await createViteServer({
@@ -559,17 +560,17 @@ const startServer = async () => {
     });
     app.use(vite.middlewares);
   } else {
-    console.log("Serving static production build from /dist...");
-    
-    const distPath = path.join(__dirname, "dist");
+    const distPath = path.join(process.cwd(), "dist");
+    console.log(`Serving static production build from: ${distPath}`);
+
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[AGENT ZERO] Booted successfully. Listening on http://0.0.0.0:${PORT}`);
+  app.listen(FINAL_PORT, "0.0.0.0", () => {
+    console.log(`[AGENT ZERO] Booted successfully. Listening on http://0.0.0.0:${FINAL_PORT}`);
   });
 };
 
