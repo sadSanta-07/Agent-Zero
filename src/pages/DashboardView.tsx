@@ -1,5 +1,5 @@
 import type { Dispatch, FormEventHandler, SetStateAction } from "react";
-import { Mic, MicOff, Plus } from "lucide-react";
+import { Mic, MicOff, Plus, Loader2, Inbox } from "lucide-react";
 import type { Task } from "../types";
 import { CalendarCard, EmailProxyCard, ShadowChronosCard } from "../components/TaskCards";
 
@@ -17,7 +17,6 @@ interface DashboardViewProps {
   onExecuteProxy: (task: Task) => Promise<void>;
   taskScopeWarnings: Record<string, string>;
   onScanInbox: () => Promise<void>;
-
 }
 
 export function DashboardView({
@@ -36,60 +35,64 @@ export function DashboardView({
   onScanInbox: handleScanInbox,
 }: DashboardViewProps) {
   return (
-    <div className="flex flex-col gap-5 min-h-0">
+    <div className="flex flex-col gap-6 min-h-0 h-full">
+      
       {/* Introduction header info */}
-      <div className="flex flex-col gap-1.5 fade-up">
-        <h2 className="font-fraunces text-2xl text-brand-text-primary">Triage Zone</h2>
-        <p className="text-xs text-brand-text-secondary leading-relaxed">
-          Dump raw intentions, threats, or tasks here. Zero-Trust parser compiles structured covers, true urgency calculations, stakes indexes, and ready-to-execute proxy letters.
+      <div className="flex flex-col gap-2 animate-fade-up shrink-0">
+        <h2 className="font-fraunces text-[32px] text-brand-text-primary leading-tight m-0">Triage Zone</h2>
+        <p className="text-[14px] font-public-sans text-brand-text-secondary leading-relaxed max-w-3xl m-0">
+          Input unstructured tasks, constraints, or objectives. The automated parser will structure workflows, calculate urgency indexes, and prepare execution drafts.
         </p>
       </div>
 
-      {/* Chat-Like Thought Input Box */}
-      <div className="bg-brand-surface border border-brand-border p-4 rounded-[3px] fade-up">
-        <form onSubmit={handleLaunchTriage} className="flex flex-col gap-3">
+      {/* Primary Input Container */}
+      <div className="bg-brand-surface border border-brand-border p-5 rounded-[3px] animate-fade-up shadow-sm shrink-0">
+        <form onSubmit={handleLaunchTriage} className="flex flex-col gap-4">
+          
           <div className="flex justify-between items-center">
-            <label className="text-[10px] uppercase tracking-widest font-space-mono font-bold text-[#5a6066]">
-              Intention Receptacle
+            <label className="text-[11px] uppercase tracking-widest font-space-mono font-bold text-brand-text-secondary">
+              Task Input
             </label>
-            <span className="text-[9px] font-space-mono text-brand-primary flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-ping" />
-              LIVE PARSING ACTIVE
+            <span className="text-[10px] font-space-mono font-medium text-brand-primary flex items-center gap-2 uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
+              System Ready
             </span>
           </div>
 
+          {/* Textarea Wrapper */}
           <div className="relative">
             <textarea
               value={rawInput}
               onChange={(e) => setRawInput(e.target.value)}
-              placeholder='e.g., "I still haven&apos;t draft and sent the update client email. I should do it today but keep postponing."'
-              className="w-full h-20 bg-brand-bg border border-brand-border p-2.5 pr-10 text-xs focus:outline-none focus:border-[#157f5b] placeholder-[#5a6066]/50 rounded-[2px] transition-all-custom resize-none"
+              placeholder='e.g., "Draft an update email to the client regarding the Q3 deliverables, but wait for my approval before sending..."'
+              className="w-full h-24 bg-brand-bg border border-brand-border p-3 pr-12 text-[14px] font-public-sans text-brand-text-primary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary placeholder-brand-text-secondary/60 rounded-xs transition-all-custom resize-none shadow-inner"
             />
-            <div className="absolute right-2.5 bottom-2.5 flex items-center gap-2">
+            <div className="absolute right-3 bottom-3 flex items-center gap-2">
               {isRecording ? (
                 <button
                   type="button"
                   onClick={stopRecording}
-                  className="bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 transition-all-custom flex items-center justify-center animate-pulse cursor-pointer"
-                  title="Stop Vocal Interception"
+                  className="bg-red-50 text-red-600 border border-red-200 p-2 rounded-xs hover:bg-red-100 hover:border-red-300 transition-all-custom flex items-center justify-center animate-pulse cursor-pointer shadow-sm"
+                  title="Stop Voice Input"
                 >
-                  <MicOff className="w-3.5 h-3.5" />
+                  <MicOff className="w-4 h-4" />
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={startRecording}
                   disabled={isProcessing}
-                  className="bg-brand-surface border border-brand-border text-brand-text-secondary hover:text-[#14171a] hover:bg-[#fbfaf5] p-1.5 rounded-[2px] transition-all-custom flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  title="Begin Vocal Interception"
+                  className="bg-brand-surface border border-brand-border text-brand-text-secondary hover:text-brand-primary hover:border-brand-primary p-2 rounded-xs transition-all-custom flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                  title="Begin Voice Input"
                 >
-                  <Mic className="w-3.5 h-3.5 text-brand-primary" />
+                  <Mic className="w-4 h-4" />
                 </button>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 justify-end">
             <button
               type="button"
               onClick={() => {
@@ -97,28 +100,30 @@ export function DashboardView({
                 handleScanInbox();
               }}
               disabled={isProcessing}
-              className="bg-brand-surface border border-brand-border text-brand-primary px-4 py-1.5 text-[10px] font-bold rounded-[2px]"
+              className="bg-brand-bg border border-brand-border text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-surface px-4 py-2 text-[13px] font-medium font-public-sans rounded-xs transition-all-custom flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              Scan Inbox
+              <Inbox className="w-4 h-4" />
+              Analyze Inbox
             </button>
 
             <button
               type="submit"
               disabled={isProcessing || !rawInput.trim()}
-              className={`text-[10px] font-bold px-4 py-1.5 rounded-xs transition-all-custom flex items-center gap-1.5 uppercase tracking-dense cursor-pointer ${!rawInput.trim() || isProcessing
-                ? 'bg-brand-border text-brand-text-secondary/70 cursor-not-allowed'
-                : 'bg-brand-primary text-brand-surface/95 hover:bg-brand-hover border border-transparent'
-                }`}
+              className={`text-[13px] font-medium font-public-sans px-5 py-2 rounded-xs transition-all-custom flex items-center gap-2 cursor-pointer ${
+                !rawInput.trim() || isProcessing
+                  ? 'bg-brand-bg border border-brand-border text-brand-text-secondary/50 cursor-not-allowed'
+                  : 'bg-brand-primary text-brand-surface hover:bg-brand-hover border border-transparent shadow-sm'
+              }`}
             >
               {isProcessing ? (
                 <>
-                  <div className="w-2.5 h-2.5 border-2 border-brand-surface border-t-transparent rounded-full animate-spin" />
-                  <span>Dispatching...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processing...</span>
                 </>
               ) : (
                 <>
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Process Thought</span>
+                  <Plus className="w-4 h-4" />
+                  <span>Process Task</span>
                 </>
               )}
             </button>
@@ -127,44 +132,42 @@ export function DashboardView({
 
         {/* Intelligent Agent Progress Stepper */}
         {isProcessing && (
-          <div className="mt-3 border-t border-[#d8d2c4]/60 pt-3 grid grid-cols-3 gap-2">
-            <div className="flex flex-col items-center text-center">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-space-mono font-bold ${processingStep >= 1 ? 'bg-[#157f5b] text-[#fbfaf5]' : 'bg-[#d8d2c4] text-[#5a6066]'
-                }`}>1</div>
-              <span className="text-[9px] mt-1 font-space-mono text-[#14171a] font-semibold">Triage Agent</span>
+          <div className="mt-4 border-t border-brand-border pt-4 grid grid-cols-3 gap-3">
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-space-mono font-bold transition-colors ${processingStep >= 1 ? 'bg-brand-primary text-brand-surface' : 'bg-brand-bg border border-brand-border text-brand-text-secondary'}`}>1</div>
+              <span className={`text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 1 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Analysis</span>
             </div>
-            <div className="flex flex-col items-center text-center">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-space-mono font-bold ${processingStep >= 2 ? 'bg-[#157f5b] text-[#fbfaf5]' : 'bg-[#d8d2c4] text-[#5a6066]'
-                }`}>2</div>
-              <span className="text-[9px] mt-1 font-space-mono text-[#14171a] font-semibold">Calibrator</span>
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-space-mono font-bold transition-colors ${processingStep >= 2 ? 'bg-brand-primary text-brand-surface' : 'bg-brand-bg border border-brand-border text-brand-text-secondary'}`}>2</div>
+              <span className={`text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 2 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Calibration</span>
             </div>
-            <div className="flex flex-col items-center text-center">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-space-mono font-bold ${processingStep >= 3 ? 'bg-[#157f5b] text-[#fbfaf5]' : 'bg-[#d8d2c4] text-[#5a6066]'
-                }`}>3</div>
-              <span className="text-[9px] mt-1 font-space-mono text-[#14171a] font-semibold">Proxy Cover</span>
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-space-mono font-bold transition-colors ${processingStep >= 3 ? 'bg-brand-primary text-brand-surface' : 'bg-brand-bg border border-brand-border text-brand-text-secondary'}`}>3</div>
+              <span className={`text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 3 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Preparation</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Active Interceptions Category List */}
-      <div className="flex-1 flex flex-col gap-3 min-h-0">
-        <div className="flex justify-between items-center border-b border-[#d8d2c4] pb-1.5 shrink-0">
-          <h3 className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#5a6066]">
-            Active Interceptions
+      {/* Active Workflows List */}
+      <div className="flex-1 flex flex-col gap-4 min-h-0">
+        
+        <div className="flex justify-between items-center border-b border-brand-border pb-2 shrink-0">
+          <h3 className="text-[12px] font-space-mono font-bold uppercase tracking-widest text-brand-text-secondary m-0">
+            Active Workflows
           </h3>
-          <span className="text-[9px] text-[#5a6066] font-space-mono bg-[#f4f1ea] border border-[#d8d2c4] px-1.5 py-0.5 rounded-[1.5px]">
-            COVERS SYNCHRONIZED
+          <span className="text-[10px] text-brand-text-secondary font-space-mono bg-brand-surface border border-brand-border px-2 py-1 rounded-xs tracking-wider uppercase">
+            Nodes Synchronized
           </span>
         </div>
 
         {tasks.length === 0 ? (
-          <div className="border border-dashed border-[#d8d2c4] p-8 text-center text-[#5a6066] rounded-[3px] flex-1 flex flex-col justify-center items-center">
-            <div className="text-lg font-fraunces text-[#14171a]/40 italic">System Idle</div>
-            <p className="text-xs mt-1">Submit an intention above to trigger autonomous protective intercepts.</p>
+          <div className="bg-brand-surface border border-dashed border-brand-border p-10 text-center rounded-[3px] flex-1 flex flex-col justify-center items-center">
+            <div className="text-[24px] font-fraunces text-brand-text-secondary/50 mb-2">System Idle</div>
+            <p className="text-[14px] font-public-sans text-brand-text-secondary m-0">Submit a query above to initiate automated task generation.</p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
+          <div className="flex-1 overflow-y-auto space-y-5 pr-2 scrollbar-thin">
             {tasks.map((task) => {
               if (task.intent_type === 'THREAT' || task.urgency >= 8.5) {
                 return (
@@ -203,4 +206,3 @@ export function DashboardView({
     </div>
   );
 }
-
