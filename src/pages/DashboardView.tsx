@@ -1,7 +1,7 @@
 import type { Dispatch, FormEventHandler, SetStateAction } from "react";
 import { Mic, MicOff, Plus, Loader2, Inbox } from "lucide-react";
 import type { Task } from "../types";
-import { CalendarCard, EmailProxyCard, ShadowChronosCard } from "../components/TaskCards";
+import { CalendarCard, EmailProxyCard, ShadowChronosCard, AmbiguousChoiceCard } from "../components/TaskCards";
 
 interface DashboardViewProps {
   rawInput: string;
@@ -36,7 +36,7 @@ export function DashboardView({
 }: DashboardViewProps) {
   return (
     <div className="flex flex-col gap-6 min-h-0 h-full">
-      
+
       {/* Introduction header info */}
       <div className="flex flex-col gap-2 animate-fade-up shrink-0">
         <h2 className="font-fraunces text-[32px] text-brand-text-primary leading-tight m-0">Triage Zone</h2>
@@ -48,7 +48,7 @@ export function DashboardView({
       {/* Primary Input Container */}
       <div className="bg-brand-surface border border-brand-border p-5 rounded-[3px] animate-fade-up shadow-sm shrink-0">
         <form onSubmit={handleLaunchTriage} className="flex flex-col gap-4">
-          
+
           <div className="flex justify-between items-center">
             <label className="text-[11px] uppercase tracking-widest font-space-mono font-bold text-brand-text-secondary">
               Task Input
@@ -109,11 +109,10 @@ export function DashboardView({
             <button
               type="submit"
               disabled={isProcessing || !rawInput.trim()}
-              className={`text-[13px] font-medium font-public-sans px-5 py-2 rounded-xs transition-all-custom flex items-center gap-2 cursor-pointer ${
-                !rawInput.trim() || isProcessing
-                  ? 'bg-brand-bg border border-brand-border text-brand-text-secondary/50 cursor-not-allowed'
-                  : 'bg-brand-primary text-brand-surface hover:bg-brand-hover border border-transparent shadow-sm'
-              }`}
+              className={`text-[13px] font-medium font-public-sans px-5 py-2 rounded-xs transition-all-custom flex items-center gap-2 cursor-pointer ${!rawInput.trim() || isProcessing
+                ? 'bg-brand-bg border border-brand-border text-brand-text-secondary/50 cursor-not-allowed'
+                : 'bg-brand-primary text-brand-surface hover:bg-brand-hover border border-transparent shadow-sm'
+                }`}
             >
               {isProcessing ? (
                 <>
@@ -151,7 +150,7 @@ export function DashboardView({
 
       {/* Active Workflows List */}
       <div className="flex-1 flex flex-col gap-4 min-h-0">
-        
+
         <div className="flex justify-between items-center border-b border-brand-border pb-2 shrink-0">
           <h3 className="text-[12px] font-space-mono font-bold uppercase tracking-widest text-brand-text-secondary m-0">
             Active Workflows
@@ -169,7 +168,19 @@ export function DashboardView({
         ) : (
           <div className="flex-1 overflow-y-auto space-y-5 pr-2 scrollbar-thin">
             {tasks.map((task) => {
-              if (task.intent_type === 'THREAT' || task.urgency >= 8.5) {
+              // 1. Explicitly catch our new AMBIGUOUS status first
+              if (task.intent_type === 'AMBIGUOUS') {
+                return (
+                  <AmbiguousChoiceCard
+                    key={task.id}
+                    task={task}
+                    handleDeleteTask={handleDeleteTask}
+                    handleExecuteProxy={handleExecuteProxy}
+                  />
+                );
+              }
+              // 2. Route Legacy Threats or explicit Multi-Channel mitigations
+              else if (task.intent_type === 'THREAT' || task.isShadowChronos) {
                 return (
                   <ShadowChronosCard
                     key={task.id}
@@ -178,7 +189,9 @@ export function DashboardView({
                     handleExecuteProxy={handleExecuteProxy}
                   />
                 );
-              } else if (task.intent_type === 'CALENDAR') {
+              }
+              // 3. Route standard Calendar events
+              else if (task.intent_type === 'CALENDAR') {
                 return (
                   <CalendarCard
                     key={task.id}
@@ -188,7 +201,9 @@ export function DashboardView({
                     taskScopeWarnings={taskScopeWarnings}
                   />
                 );
-              } else {
+              }
+              // 4. Default to Email Proxy (Handles EMAIL and MEMORY tasks)
+              else {
                 return (
                   <EmailProxyCard
                     key={task.id}
