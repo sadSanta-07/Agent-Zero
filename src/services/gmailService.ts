@@ -3,6 +3,9 @@ export interface GmailMessage {
   threadId: string;
 }
 
+/**
+ * @param token 
+ */
 export async function getUnreadEmails(token: string) {
   const response = await fetch(
     "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread newer_than:7d",
@@ -14,12 +17,16 @@ export async function getUnreadEmails(token: string) {
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch emails");
+    throw new Error(`Gmail API Error: Failed to fetch inbox data (Status: ${response.status})`);
   }
 
   return response.json();
 }
 
+/**
+ * @param token 
+ * @param messageId 
+ */
 export async function getEmailDetails(
   token: string,
   messageId: string
@@ -34,9 +41,8 @@ export async function getEmailDetails(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch message");
+    throw new Error(`Gmail API Error: Failed to fetch message details (Status: ${response.status})`);
   }
 
   return response.json();
 }
-
