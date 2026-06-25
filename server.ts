@@ -241,7 +241,6 @@ app.post("/api/agents/triage", async (req, res) => {
   let draft = "";
   let calendarEvent = null;
 
-  // FIX 5: Ensure fallback simulation also populates both for AMBIGUOUS
   if (intent_type === 'CALENDAR' || intent_type === 'AMBIGUOUS') {
     calendarEvent = {
       title: title || "Scheduled Session",
@@ -249,10 +248,24 @@ app.post("/api/agents/triage", async (req, res) => {
       endTime: new Date(Date.now() + 24 * 3600000 + 3600000).toISOString(),
       description: `Automated calendar reservation.`
     };
-  } 
-  
+  }
+
   if (intent_type === 'EMAIL' || intent_type === 'AMBIGUOUS') {
     draft = `TO: ${targetRecipient || 'team@company.com'}\nSUBJECT: Urgent Update: ${title}\n\nBODY:\n${rawText}`;
+  }
+
+  // THE FIX: Smart Offline Extraction!
+  // If the AI is dead, use regex to extract the entity and save it to memory anyway.
+  let extractedEntities: any[] = [];
+  if (intent_type === 'MEMORY' && targetRecipient) {
+    const recordIdx = words.findIndex(w => w.toLowerCase() === 'record' || w.toLowerCase() === 'remember');
+    const keyName = (recordIdx >= 0 && words.length > recordIdx + 1) ? words[recordIdx + 1] : "Contact";
+
+    extractedEntities.push({
+      key: keyName,
+      value: targetRecipient,
+      type: "NAME -> EMAIL"
+    });
   }
 
   res.json({
@@ -266,11 +279,11 @@ app.post("/api/agents/triage", async (req, res) => {
     draft,
     isCalendarEvent: intent_type === 'CALENDAR',
     calendarEvent,
-    extractedEntities: [],
+    extractedEntities, // <-- Now passing the forcefully extracted memory!
     thoughts: [
       `[Triage Agent] Processing local simulation fallback.`,
       `[Calibrator Agent] Urgency evaluated at ${urgency}/10.`,
-      `[Proxy Agent] Task routed as ${intent_type}.`
+      `[Memory Agent] Forcing offline entity extraction.`
     ],
     isShadowChronos: false
   });
