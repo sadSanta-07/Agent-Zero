@@ -17,30 +17,23 @@
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
-
-    "baseUrl": ".",
-
     "paths": {
       "@/*": [
         "./*"
       ]
     },
-
     "types": [
       "react",
       "react-dom"
     ],
-
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-
   "include": [
     "src",
     "server.ts",
     "vite.config.ts"
   ],
-
   "exclude": [
     "dist",
     "node_modules"

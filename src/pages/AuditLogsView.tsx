@@ -35,7 +35,7 @@ export function AuditLogsView({
           <button
             key={type}
             onClick={() => setLogFilter(type as any)}
-            className={`text-[11px] font-space-mono px-3 py-1.5 border transition-all-custom rounded-[2px] cursor-pointer uppercase tracking-wider ${
+            className={`text-[11px] font-space-mono px-3 py-1.5 border transition-all-custom rounded-xs cursor-pointer uppercase tracking-wider ${
               logFilter === type 
               ? 'bg-brand-primary text-brand-surface border-brand-primary font-bold shadow-sm' 
               : 'bg-brand-bg text-brand-text-secondary border-brand-border hover:border-brand-text-secondary hover:text-brand-text-primary'
@@ -47,7 +47,7 @@ export function AuditLogsView({
       </div>
 
       {/* Light Theme Ledger Window */}
-      <div className="bg-brand-bg border border-brand-border text-brand-text-primary font-space-mono text-[12px] p-4 rounded-[3px] h-[350px] overflow-y-auto flex flex-col gap-2 scrollbar-thin shadow-inner">
+      <div className="bg-brand-bg border border-brand-border text-brand-text-primary font-space-mono text-[12px] p-4 rounded-[3px] h-87.5 overflow-y-auto flex flex-col gap-2 scrollbar-thin shadow-inner">
         {filteredLogs.map((log) => {
           // Check for critical system events (using both old and new terminology to be safe)
           const isCritical = log.message.includes("SHADOW CHRONOS") || log.message.includes("Resolution Deployed");
@@ -61,7 +61,7 @@ export function AuditLogsView({
               </span>
               
               {/* Agent Badge - Colored based on your brand palette */}
-              <span className={`font-bold select-none whitespace-nowrap px-1.5 py-0.5 rounded-[2px] uppercase text-[10px] tracking-wider mt-0.5 shrink-0 ${
+              <span className={`font-bold select-none whitespace-nowrap px-1.5 py-0.5 rounded-xs uppercase text-[10px] tracking-wider mt-0.5 shrink-0 ${
                 isCritical ? 'text-red-700 bg-red-100 border border-red-200' :
                 log.agentName === 'Triage Agent' ? 'text-[#9a5b00] bg-[#f8ecd6] border border-[#f8ecd6]' : // accent-badge
                 log.agentName === 'Calibrator Agent' ? 'text-brand-primary bg-brand-primary/10 border border-brand-primary/20' :
@@ -72,7 +72,7 @@ export function AuditLogsView({
               </span>
               
               {/* Log Message */}
-              <span className={`flex-1 break-words select-all font-medium ${isCritical ? "text-red-700" : "text-brand-text-primary"}`}>
+              <span className={`flex-1 wrap-break-word select-all font-medium ${isCritical ? "text-red-700" : "text-brand-text-primary"}`}>
                 {log.message}
               </span>
               
