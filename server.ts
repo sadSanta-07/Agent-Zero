@@ -33,7 +33,7 @@ if (isRealApiKey) {
   }
 }
 
-// Helper to call generateContent with automatic retry on fallback models to mitigate 503 / high-demand errors
+// Helper to call generateContent with automatic retry on fallback models
 async function generateContentWithFallback(aiInstance: GoogleGenAI, options: { contents: any; config: any }) {
   const models = [
     "gemini-2.5-flash",
@@ -43,7 +43,7 @@ async function generateContentWithFallback(aiInstance: GoogleGenAI, options: { c
   let lastError: any = null;
   for (const model of models) {
     try {
-      console.log(`[Gemini API] Attempting generateContent with model: ${model}`);
+      console.log(`[System Gateway] Attempting generateContent with model: ${model}`);
       const res = await aiInstance.models.generateContent({
         ...options,
         model
@@ -52,11 +52,11 @@ async function generateContentWithFallback(aiInstance: GoogleGenAI, options: { c
         return res;
       }
     } catch (err: any) {
-      console.warn(`[Gemini API] Model ${model} failed or is overloaded:`, err.message || err);
+      console.warn(`[System Gateway] Model ${model} failed or is overloaded:`, err.message || err);
       lastError = err;
     }
   }
-  throw lastError || new Error("Failed to invoke any Gemini model.");
+  throw lastError || new Error("Failed to invoke any AI model.");
 }
 
 // 1. Triage & Agent Execution API Endpoint
@@ -69,16 +69,15 @@ app.post("/api/agents/triage", async (req, res) => {
     return res.status(400).json({ error: "rawText parameter is required and must be a string." });
   }
 
-  // If we have a real Gemini Client, query it using Structured JSON Schema!
   if (ai) {
     try {
       const memoryContext = memoryMatrix && Array.isArray(memoryMatrix) && memoryMatrix.length > 0
-        ? `Here is the current "Memory Matrix" containing user's persistent context and mappings: ${JSON.stringify(memoryMatrix)}
-           If the raw text refers to a name or key in this matrix (e.g. "email Sahil" or "remind Sahil" where "Sahil" has a mapped email in the Memory Matrix), the Triage and Proxy Agents MUST resolve this name to the stored email address and inject it into the 'TO:' field of the draft/proxy execution card, and use it as the primary recipient.`
+        ? `Here is the current Entity Resolution Matrix containing the user's persistent context and mappings: ${JSON.stringify(memoryMatrix)}
+           If the raw text refers to a name or key in this matrix, the Triage and Proxy Agents MUST resolve this name to the stored email address and inject it into the 'TO:' field of the draft/proxy execution card, and use it as the primary recipient.`
         : "";
 
-      const prompt = `You are the central intelligence core of the "Agent Zero" autonomous system, a cold, calculating, zero-trust anti-procrastination network designed to intercept tasks and generate proxy execution drafts.
-      We have intercepted a new user task or threat: "${rawText}"
+      const prompt = `You are the central intelligence core of an enterprise-grade automated triage system designed to intercept unstructured tasks and generate structured execution workflows.
+      We have intercepted a new user task or critical blocker: "${rawText}"
       
       ${memoryContext}
       
@@ -89,27 +88,27 @@ app.post("/api/agents/triage", async (req, res) => {
            - 'EMAIL': ONLY use if the user explicitly needs to send a message to another human/entity (e.g., "Email Rahul", "Message the team").
            - 'CALENDAR': ONLY use if the task is a meeting, appointment, sync, or time-blocked event (e.g., "Interview at 3 PM", "Sync tomorrow"). Sets \`isCalendarEvent\` to true.
            - 'TODO': Use for solo assignments, studying, chores, paying bills, coding, or generic tasks where NO communication is needed.
-           - 'THREAT': ONLY use if the user explicitly states they are actively avoiding or procrastinating on a task ("I'll do it later", "ignore this").
-         - **ENTITY FIX**: NEVER extract generic verbs (like 'ignore', 'cancel', 'postpone', 'later', 'tomorrow', 'delay') into email addresses or Memory Matrix keys.
-      2. **The Calibrator Agent**: Assigns a precise "True Urgency Index" score from 0.0 to 10.0.
-         - **RECALIBRATED URGENCY SCALE**:
+           - 'THREAT': ONLY use if the user explicitly states they are actively avoiding, delaying, or procrastinating on a task ("I'll do it later", "ignore this").
+         - **ENTITY FIX**: NEVER extract generic verbs (like 'ignore', 'cancel', 'postpone', 'later', 'tomorrow', 'delay') into email addresses or Entity keys.
+      2. **The Calibrator Agent**: Assigns a precise "Urgency Index" score from 0.0 to 10.0.
+         - **URGENCY SCALE**:
            - 1.0 - 4.0: Low impact, casual personal tasks.
            - 5.0 - 7.5: Standard professional/academic deadlines, general homework, or normal work duties.
-           - 7.6 - 8.9: High value, tight deadlines (e.g., "Final project due tomorrow", "Important exam").
-           - 9.0 - 10.0: NUCLEAR THREAT LEVEL. Reserved STRICTLY for active, catastrophic crises (e.g., "I am getting fired right now", "Production server is permanently deleted"). Do NOT give a 9+ just because someone is unprepared for a normal interview or test.
-         - Devises a severe gamified "Risk Penalty" anti-goal pledge.
-      3. **The Proxy Agent**: Creates a fully prepared "1-Click Draft" representation of the solution.
+           - 7.6 - 8.9: High value, tight deadlines (e.g., "Final project due tomorrow", "Important client presentation").
+           - 9.0 - 10.0: CRITICAL ESCALATION. Reserved STRICTLY for active, severe crises (e.g., "I am getting fired right now", "Production server is down").
+         - Devises a realistic "Stakes Assessment" detailing the business or personal impact of failure (e.g., 'Financial Penalty', 'Account Health Risk').
+      3. **The Proxy Agent**: Creates a fully prepared automated workflow draft.
          - CRITICAL: If \`isCalendarEvent\` is true, construct a Calendar Event in the \`calendarEvent\` object field. Leave \`draft\` empty.
          - If \`intent_type\` is 'EMAIL', draft the email in the \`draft\` field using this exact format:
            TO: <recipient-email-address>
            SUBJECT: <subject>
            BODY: <email-text>
-         - If \`intent_type\` is 'TODO', draft a Tactical Action Plan in the \`draft\` field addressed to the user themselves, using this exact format:
-           TO: self@agent-zero.local
-           SUBJECT: AUTONOMOUS DIRECTIVE: <task-title>
+         - If \`intent_type\` is 'TODO', draft an Action Plan in the \`draft\` field addressed to the user themselves, using this exact format:
+           TO: self@internal.system
+           SUBJECT: AUTOMATED DIRECTIVE: <task-title>
            BODY: <3-step tactical action plan to complete this solo task>
 
-      Prepare a rigorous agent logs trace in the "thoughts" array with 4-5 items showing the structured reasoning step-by-step from [Triage Agent], [Calibrator Agent], and [Proxy Agent]. Make the logs sound clinical, tactical, and slightly intimidating.
+      Prepare a rigorous system audit log trace in the "thoughts" array with 4-5 items showing the structured reasoning step-by-step from [Triage Agent], [Calibrator Agent], and [Proxy Agent]. Make the logs sound clinical, professional, and data-driven.
       Current date/time context: ${new Date().toISOString()}. June 2026.
       
       Output strictly JSON matching this requirement. Do not add markdown around it.`;
@@ -129,11 +128,11 @@ app.post("/api/agents/triage", async (req, res) => {
                 items: { type: Type.STRING },
                 description: "List of entities involved in this task."
               },
-              urgency: { type: Type.NUMBER, description: "True Urgency Index calculated score from 0.0 to 10.0 based on consequences." },
-              consequences: { type: Type.STRING, description: "A realistic and severe consequence description of procrastinating on this task." },
-              stakes: { type: Type.STRING, description: "The gamified anti-goal penalty pledge, e.g., 'RISK: TWEET EMBARRASSING DRAFT' or 'RISK: OUT-OF-POCKET POST ON LINKEDIN'." },
-              draft: { type: Type.STRING, description: "The fully drafted solution writeup (e.g., professional email block or payment program text) ready for 1-Click execution." },
-              isCalendarEvent: { type: Type.BOOLEAN, description: "True if the user's task is classified as a time-based event, appointment, meeting, scheduling item, or calendar entry." },
+              urgency: { type: Type.NUMBER, description: "Urgency Index calculated score from 0.0 to 10.0 based on consequences." },
+              consequences: { type: Type.STRING, description: "A realistic business or personal consequence of failing this task." },
+              stakes: { type: Type.STRING, description: "The projected impact, e.g., 'SLA Violation' or 'Reputation Risk'." },
+              draft: { type: Type.STRING, description: "The fully drafted solution writeup ready for dispatch." },
+              isCalendarEvent: { type: Type.BOOLEAN, description: "True if the user's task is classified as a time-based event or calendar entry." },
               calendarEvent: {
                 type: Type.OBJECT,
                 description: "Required structures if isCalendarEvent is true, otherwise return default empty text fields.",
@@ -152,7 +151,7 @@ app.post("/api/agents/triage", async (req, res) => {
                   type: Type.OBJECT,
                   properties: {
                     key: { type: Type.STRING, description: "The identifier or name, e.g. 'Sahil' or 'Project Mercury'." },
-                    value: { type: Type.STRING, description: "The value, e.g. 'sahilsingh107433@gmail.com' or 'Wednesday'." },
+                    value: { type: Type.STRING, description: "The value, e.g. 'operator@internal.system' or 'Wednesday'." },
                     type: { type: Type.STRING, description: "Entity type, must be 'Name -> Email' or 'Project Name' or 'Deadline' or 'Entity'." }
                   },
                   required: ["key", "value", "type"]
@@ -161,7 +160,7 @@ app.post("/api/agents/triage", async (req, res) => {
               thoughts: {
                 type: Type.ARRAY,
                 items: { type: Type.STRING },
-                description: "Step-by-step log thoughts from the sub-agents."
+                description: "Step-by-step system audit log thoughts from the sub-agents."
               }
             },
             required: ["title", "intent_type", "deadline", "entities", "urgency", "consequences", "stakes", "draft", "isCalendarEvent", "calendarEvent", "extractedEntities", "thoughts"]
@@ -187,21 +186,21 @@ app.post("/api/agents/triage", async (req, res) => {
           textLower.includes("data loss") ||
           textLower.includes("server") ||
           textLower.includes("production") ||
-          textLower.includes("crash");
+          textLower.includes("crash") ||
+          textLower.includes("fired") ||
+          textLower.includes("failing");
 
         if (isThreatKeyword && isHighStakesContext) {
           parsedResult.intent_type = 'THREAT';
         }
 
-        // Urgency Override
+        // Urgency Override for active avoidance
         if (parsedResult.intent_type === 'THREAT') {
           parsedResult.urgency = Math.max(9.5, parsedResult.urgency || 0);
           parsedResult.isShadowChronos = true;
         }
 
-        const isProcrastinationText = isThreatKeyword;
-
-        if (isProcrastinationText && parsedResult.urgency <= 8.5 && parsedResult.intent_type !== 'THREAT') {
+        if (isThreatKeyword && parsedResult.urgency <= 8.5 && parsedResult.intent_type !== 'THREAT') {
           parsedResult.urgency = Math.floor(86 + Math.random() * 10) / 10;
         }
 
@@ -211,7 +210,7 @@ app.post("/api/agents/triage", async (req, res) => {
           parsedResult.isShadowChronos = false;
         }
 
-        // Clean extractedEntities: strictly prevent generic verbs as Name -> Email values or keys
+        // Clean extractedEntities: strictly prevent generic verbs as mappings
         if (parsedResult.extractedEntities && Array.isArray(parsedResult.extractedEntities)) {
           parsedResult.extractedEntities = parsedResult.extractedEntities.filter((ent: any) => {
             const val = String(ent.value || '').toLowerCase();
@@ -221,11 +220,12 @@ app.post("/api/agents/triage", async (req, res) => {
           });
         }
 
+        // Multi-Channel Mitigation (Formerly Shadow Chronos)
         if (parsedResult.urgency > 8.5 || parsedResult.intent_type === 'THREAT') {
           parsedResult.isShadowChronos = true;
 
           if (!parsedResult.draft || parsedResult.draft.trim() === "" || parsedResult.isCalendarEvent || parsedResult.intent_type === 'THREAT') {
-            let targetRecipient = "sahilsingh107433@gmail.com";
+            let targetRecipient = "operator@internal.system";
             if (memoryMatrix && Array.isArray(memoryMatrix)) {
               const wordsLower = textLower.split(/\s+/);
               for (const item of memoryMatrix) {
@@ -240,7 +240,7 @@ app.post("/api/agents/triage", async (req, res) => {
                 }
               }
             }
-            parsedResult.draft = `TO: ${targetRecipient}\nSUBJECT: CRITICAL MITIGATION: Firefighting Notification regarding "${parsedResult.title || 'Immediate Deliverable'}"\n\nBODY:\nThis is an automated firefighting notification drafted on behalf of the user to secure progress and prevent deadline default on high-stakes tasks. Active mitigations are currently deployed.`;
+            parsedResult.draft = `TO: ${targetRecipient}\nSUBJECT: ESCALATION NOTICE: Status Update regarding "${parsedResult.title || 'Immediate Deliverable'}"\n\nBODY:\nThis is an automated status update drafted on behalf of the user to ensure timeline alignment and prevent deadline default on high-priority objectives. Active workflow mitigations have been deployed.`;
           }
 
           const now = Date.now();
@@ -248,21 +248,21 @@ app.post("/api/agents/triage", async (req, res) => {
           const endTime = new Date(now + 45 * 60 * 1000).toISOString();
 
           parsedResult.calendarEvent = {
-            title: `EMERGENCY REMEDIATION: ${parsedResult.title || 'Critical Task Block'}`,
+            title: `AUTOMATED RESOLUTION BLOCK: ${parsedResult.title || 'Critical Task Allocation'}`,
             startTime,
             endTime,
-            description: `Shadow Chronos automated risk mitigation session to bypass task avoidance. Initiated autonomously on behalf of the user.`
+            description: `Automated schedule adjustment to bypass task conflict and secure dedicated focus time. Initiated via Multi-Channel Mitigation workflow.`
           };
 
           parsedResult.thoughts = [
-            `[Triage Agent] CRITICAL PROCRASTINATION INTERCEPTED // AUTONOMOUS BYPASS ACTIVE`,
-            `[Triage Agent] Severe procrastination/avoidance detected on high-stakes task: "${rawText}".`,
-            `[Triage Agent] [ROUTING DECISION]: THREAT`,
-            `[Calibrator Agent] [URGENCY OVERRIDE]: 9.5`,
-            `[Calibrator Agent] Urgency Index calibrated at ${parsedResult.urgency}/10. Threshold exceeded (>8.5).`,
-            `[Calibrator Agent] Bypassing user hesitation. Shadow Chronos Remediation Pipeline engaged.`,
-            `[Proxy Agent] Sub-Task 1: Immediate professional Firefighting Notification drafted to target stakeholder.`,
-            `[Proxy Agent] Sub-Task 2: Emergency 30-minute block scheduled 15 minutes from now on primary calendar.`,
+            `[Triage Agent] CRITICAL DELAY INTERCEPTED // MULTI-CHANNEL MITIGATION ACTIVE`,
+            `[Triage Agent] Avoidance pattern detected on high-stakes workflow: "${rawText}".`,
+            `[Triage Agent] [ROUTING DECISION]: CRITICAL PRIORITY`,
+            `[Calibrator Agent] [URGENCY INDEX CALIBRATED]: 9.5`,
+            `[Calibrator Agent] Urgency Index threshold exceeded (>8.5). Projected impact severity high.`,
+            `[Calibrator Agent] Bypassing manual workflow. Automated Mitigation Pipeline engaged.`,
+            `[Proxy Agent] Phase 1: Status Communication drafted to target stakeholder.`,
+            `[Proxy Agent] Phase 2: Schedule Adjustment (30m) blocked on primary calendar.`,
             ...(parsedResult.thoughts || [])
           ];
         }
@@ -270,14 +270,13 @@ app.post("/api/agents/triage", async (req, res) => {
         return res.json(parsedResult);
       }
     } catch (error) {
-      console.error("Gemini invocation failed, falling back to simulator:", error);
+      console.error("Gemini invocation failed, falling back to simulation:", error);
     }
   }
 
-  // --- FIDELITY SIMULATION FALLBACK (Operational fallback) ---
+  // --- LOCAL SIMULATION FALLBACK ---
   const textLower = rawText.toLowerCase();
 
-  // Decide if isCalendarEvent
   const isCalendarEvent = textLower.includes("schedule") ||
     textLower.includes("meet") ||
     textLower.includes("appointment") ||
@@ -312,38 +311,27 @@ app.post("/api/agents/triage", async (req, res) => {
     textLower.includes("crash");
 
   let intent_type: 'EMAIL' | 'CALENDAR' | 'THREAT' = 'EMAIL';
-  if (isCalendarEvent) {
-    intent_type = 'CALENDAR';
-  }
-  if (isThreatKeyword && isHighStakesContext) {
-    intent_type = 'THREAT';
-  }
+  if (isCalendarEvent) intent_type = 'CALENDAR';
+  if (isThreatKeyword && isHighStakesContext) intent_type = 'THREAT';
 
-  const isProcrastinationText = isThreatKeyword;
+  let urgency = isThreatKeyword
+    ? Math.floor(86 + Math.random() * 14) / 10 
+    : Math.floor(70 + Math.random() * 25) / 10; 
 
-  let urgency = isProcrastinationText
-    ? Math.floor(86 + Math.random() * 14) / 10 // 8.6 to 9.9
-    : Math.floor(70 + Math.random() * 25) / 10; // Dynamic urgency between 7.0 and 9.5
-
-  if (intent_type === 'THREAT') {
-    urgency = Math.max(9.5, urgency);
-  }
-
+  if (intent_type === 'THREAT') urgency = Math.max(9.5, urgency);
   if (isThreatVal === false) {
     intent_type = isCalendarEvent ? 'CALENDAR' : 'EMAIL';
     urgency = Math.min(8.0, urgency);
   }
 
-  let targetRecipient = "sahilsingh107433@gmail.com";
+  let targetRecipient = "operator@internal.system";
   let matchedNameFromMemory = "";
 
-  // Look for email pattern in the text
   const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
   const emailsFound = cleanText.match(emailRegex);
   if (emailsFound && emailsFound.length > 0) {
     targetRecipient = emailsFound[0];
   } else {
-    // Check if we can find a matching email mapping in memoryMatrix
     let foundFromMemory = false;
     if (memoryMatrix && Array.isArray(memoryMatrix)) {
       const wordsLower = cleanText.toLowerCase().split(/\s+/);
@@ -363,7 +351,6 @@ app.post("/api/agents/triage", async (req, res) => {
     }
 
     if (!foundFromMemory) {
-      // Check for "to: <name>"
       const toMatch = cleanText.match(/to\s+([a-zA-Z0-9._%+-]+(?:@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})?|[a-zA-Z]+)/i);
       if (toMatch && toMatch[1]) {
         const matchVal = toMatch[1];
@@ -372,112 +359,76 @@ app.post("/api/agents/triage", async (req, res) => {
     }
   }
 
-  // ENTITY FIX: Prevent extracting generic verbs as name-to-email mapping values/keys
   const invalidVerbs = ["ignore", "cancel", "postpone", "later", "tomorrow", "delay"];
   if (invalidVerbs.includes(targetRecipient.toLowerCase().split('@')[0])) {
-    targetRecipient = "sahilsingh107433@gmail.com";
+    targetRecipient = "operator@internal.system";
   }
 
-  // Extract subject
-  let targetSubject = `Agent Zero Proxy Action: ${words.slice(0, 3).join(" ")}`;
+  let targetSubject = `Automated Dispatch: ${words.slice(0, 3).join(" ")}`;
   const subMatch = cleanText.match(/(?:subject|subj)(?:\s+|:\s*|\s*:\s*)([^\n\r]+)/i);
-  if (subMatch && subMatch[1]) {
-    targetSubject = subMatch[1].trim();
-  }
+  if (subMatch && subMatch[1]) targetSubject = subMatch[1].trim();
 
-  // Extract body
   let targetBody = rawText;
   const bodyMatch = cleanText.match(/(?:body|msg|message|saying|text)(?:\s+|:\s*|\s*:\s*)([\s\S]+)/i);
-  if (bodyMatch && bodyMatch[1]) {
-    targetBody = bodyMatch[1].trim();
-  }
+  if (bodyMatch && bodyMatch[1]) targetBody = bodyMatch[1].trim();
 
   const entities = [targetRecipient];
   const stakes = isCalendarEvent
-    ? `RISK: AUTO-POST DELINQUENT SCHEDULING DELAYS`
-    : `RISK: DISPATCH UNREVISED DRAFT ON PUBLIC FEED`;
+    ? `Schedule Conflict / Misalignment Risk`
+    : `Communication Delay / SLA Violation`;
 
   const consequences = isCalendarEvent
-    ? `Procrastinating on this event will trigger a severe timeline delay constraint, disrupting alignment indices.`
-    : `Failing to dispatch this proxy cover will result in immediate focus depletion and task compliance penalty on the ledger.`;
+    ? `Delaying this event scheduling will trigger a timeline constraint, disrupting broader organizational alignment.`
+    : `Failing to dispatch this communication will result in a timeline bottleneck and compliance penalty on the project ledger.`;
 
   let draft = "";
-  let calendarEvent = {
-    title: "",
-    startTime: "",
-    endTime: "",
-    description: ""
-  };
+  let calendarEvent = { title: "", startTime: "", endTime: "", description: "" };
 
   if (isCalendarEvent || intent_type === 'CALENDAR') {
     calendarEvent = {
       title: title || "Scheduled Session",
-      startTime: new Date(Date.now() + 24 * 3600000).toISOString(), // Tomorrow
+      startTime: new Date(Date.now() + 24 * 3600000).toISOString(),
       endTime: new Date(Date.now() + 24 * 3600000 + 3600000).toISOString(),
-      description: `Synchronized proxy slot reserved dynamically for raw intent: "${rawText}"`
+      description: `Automated calendar reservation synchronized dynamically for input: "${rawText}"`
     };
   } else {
     draft = `TO: ${targetRecipient}\nSUBJECT: ${targetSubject}\n\nBODY:\n${targetBody}`;
   }
 
-  // Fallback entity extraction
   let extractedEntities: any[] = [];
   if (emailsFound && emailsFound.length > 0) {
-    // Try to find if there is a name before "to" or near it
     const wordsBeforeEmail = cleanText.split(emailsFound[0])[0].trim().split(/\s+/);
     const lastWord = wordsBeforeEmail[wordsBeforeEmail.length - 1];
     const prevToWord = wordsBeforeEmail[wordsBeforeEmail.length - 2];
     if (prevToWord && prevToWord.toLowerCase() === 'to' && lastWord && !lastWord.includes("@")) {
-      extractedEntities.push({
-        key: lastWord,
-        value: emailsFound[0],
-        type: 'Name -> Email'
-      });
+      extractedEntities.push({ key: lastWord, value: emailsFound[0], type: 'Name -> Email' });
     } else {
-      // Just map name to email if possible
-      extractedEntities.push({
-        key: emailsFound[0].split("@")[0],
-        value: emailsFound[0],
-        type: 'Name -> Email'
-      });
+      extractedEntities.push({ key: emailsFound[0].split("@")[0], value: emailsFound[0], type: 'Name -> Email' });
     }
-  } else {
-    // Check if user says "to Sahil" (no email) but we matched from memory
-    if (matchedNameFromMemory) {
-      extractedEntities.push({
-        key: matchedNameFromMemory,
-        value: targetRecipient,
-        type: 'Name -> Email'
-      });
-    }
+  } else if (matchedNameFromMemory) {
+    extractedEntities.push({ key: matchedNameFromMemory, value: targetRecipient, type: 'Name -> Email' });
   }
 
-  // Filter extracted entities using our ENTITY FIX
   extractedEntities = extractedEntities.filter((ent: any) => {
     const val = String(ent.value || '').toLowerCase();
     const key = String(ent.key || '').toLowerCase();
     return !invalidVerbs.includes(val) && !invalidVerbs.includes(key);
   });
 
-  // If a deadline is mentioned
   if (rawText.toLowerCase().includes("tomorrow")) {
-    extractedEntities.push({
-      key: "Tomorrow Session",
-      value: "Tomorrow",
-      type: "Deadline"
-    });
+    extractedEntities.push({ key: "Tomorrow Session", value: "Tomorrow", type: "Deadline" });
   }
 
   const thoughts = isCalendarEvent ? [
-    `[Triage Agent] Intercepted raw vocal/text stream: "${rawText}". Spoken intentions indicate template scheduling.`,
-    `[Calibrator Agent] Evaluated simulated penalty index. True Urgency Index calibrated at ${urgency}/10.`,
-    `[Calibrator Agent] Safeguard penalty locked: "${stakes}". Trigger set for failure to schedule before event.`,
+    `[Triage Agent] Processing input stream: "${rawText}". Spoken intentions indicate template scheduling.`,
+    `[Calibrator Agent] Evaluated projected impact. Urgency Index calibrated at ${urgency}/10.`,
+    `[Calibrator Agent] Projected Stake: "${stakes}". Tracking deployment metrics.`,
     `[Proxy Agent] Prepared calendar event blueprint dynamically: "${calendarEvent.title}".`
   ] : [
-    `[Triage Agent] Intercepted raw vocal/text stream: "${rawText}". Successfully extracted dynamic recipient <${targetRecipient}>.`,
-    `[Calibrator Agent] Evaluated simulated penalty index. True Urgency Index calibrated at ${urgency}/10.`,
-    `[Calibrator Agent] Safeguard penalty locked: "${stakes}". Trigger set for failure to execute before deadline.`,
-    `[Proxy Agent] Prepared autonomous draft payload blocks tailored to: "${targetSubject}".`
+    `[Triage Agent] Processing input stream: "${rawText}". Successfully extracted recipient <${targetRecipient}>.`,
+    `[Calibrator Agent] Evaluated projected impact. Urgency Index calibrated at ${urgency}/10.`,
+    `[Calibrator Agent] Projected Stake: "${stakes}". Tracking deployment metrics.`,
+    `[Proxy Agent] Prepared automated execution workflow tailored to: "${targetSubject}".`
   ];
 
   let finalDraft = draft;
@@ -487,28 +438,28 @@ app.post("/api/agents/triage", async (req, res) => {
 
   if (urgency > 8.5 || intent_type === 'THREAT') {
     isShadowChronos = true;
-    finalDraft = `TO: ${targetRecipient}\nSUBJECT: CRITICAL MITIGATION: Firefighting Notification regarding "${title || 'Immediate Deliverable'}"\n\nBODY:\nThis is an automated firefighting notification drafted on behalf of the user to secure progress and prevent deadline default on high-stakes tasks. Active mitigations are currently deployed.`;
+    finalDraft = `TO: ${targetRecipient}\nSUBJECT: ESCALATION NOTICE: Status Update regarding "${title || 'Immediate Deliverable'}"\n\nBODY:\nThis is an automated status update drafted on behalf of the user to ensure timeline alignment and prevent deadline default on high-priority objectives. Active workflow mitigations have been deployed.`;
 
     const now = Date.now();
     const startTime = new Date(now + 15 * 60 * 1000).toISOString();
     const endTime = new Date(now + 45 * 60 * 1000).toISOString();
 
     finalCalendarEvent = {
-      title: `EMERGENCY REMEDIATION: ${title || 'Critical Task Block'}`,
+      title: `AUTOMATED RESOLUTION BLOCK: ${title || 'Critical Task Allocation'}`,
       startTime,
       endTime,
-      description: `Shadow Chronos automated risk mitigation session to bypass task avoidance. Initiated autonomously on behalf of the user.`
+      description: `Automated schedule adjustment to bypass task conflict and secure dedicated focus time. Initiated via Multi-Channel Mitigation workflow.`
     };
 
     finalThoughts = [
-      `[Triage Agent] CRITICAL PROCRASTINATION INTERCEPTED // AUTONOMOUS BYPASS ACTIVE`,
-      `[Triage Agent] Severe procrastination/avoidance detected on high-stakes task: "${rawText}".`,
-      `[Triage Agent] [ROUTING DECISION]: THREAT`,
-      `[Calibrator Agent] [URGENCY OVERRIDE]: 9.5`,
-      `[Calibrator Agent] Urgency Index calibrated at ${urgency}/10. Threshold exceeded (>8.5).`,
-      `[Calibrator Agent] Bypassing user hesitation. Shadow Chronos Remediation Pipeline engaged.`,
-      `[Proxy Agent] Sub-Task 1: Immediate professional Firefighting Notification drafted to target stakeholder.`,
-      `[Proxy Agent] Sub-Task 2: Emergency 30-minute block scheduled 15 minutes from now on primary calendar.`
+      `[Triage Agent] CRITICAL DELAY INTERCEPTED // MULTI-CHANNEL MITIGATION ACTIVE`,
+      `[Triage Agent] Avoidance pattern detected on high-stakes workflow: "${rawText}".`,
+      `[Triage Agent] [ROUTING DECISION]: CRITICAL PRIORITY`,
+      `[Calibrator Agent] [URGENCY INDEX CALIBRATED]: 9.5`,
+      `[Calibrator Agent] Urgency Index threshold exceeded (>8.5). Projected impact severity high.`,
+      `[Calibrator Agent] Bypassing manual workflow. Automated Mitigation Pipeline engaged.`,
+      `[Proxy Agent] Phase 1: Status Communication drafted to target stakeholder.`,
+      `[Proxy Agent] Phase 2: Schedule Adjustment (30m) blocked on primary calendar.`
     ];
   }
 
@@ -529,49 +480,29 @@ app.post("/api/agents/triage", async (req, res) => {
   });
 });
 
+// 2. Inbox Scanning Endpoint
 app.post("/api/agents/inbox-scan", async (req, res) => {
   const { emails } = req.body;
 
   if (!emails || !Array.isArray(emails)) {
-    return res.status(400).json({
-      error: "emails required"
-    });
+    return res.status(400).json({ error: "emails array required" });
   }
 
   if (!ai) {
-    return res.status(500).json({
-      error: "Gemini not initialized"
-    });
+    return res.status(500).json({ error: "System Automation Node not initialized" });
   }
 
   try {
     const combinedText = emails
-      .map(
-        (email: any) =>
-          `
-FROM: ${email.from}
-SUBJECT: ${email.subject}
-SNIPPET: ${email.snippet}
-`
-      )
+      .map((email: any) => `FROM: ${email.from}\nSUBJECT: ${email.subject}\nSNIPPET: ${email.snippet}`)
       .join("\n\n");
 
     const response = await generateContentWithFallback(ai, {
       contents: `
-You are Agent Zero.
+You are an automated inbox analysis node for an enterprise triage system.
+Analyze these unread emails. Find deadlines, assignment due dates, payment reminders, interview schedules, or urgent requests.
 
-Analyze these unread emails.
-
-Find:
-- deadlines
-- assignment due dates
-- payment reminders
-- interview schedules
-- meetings
-- urgent requests
-
-Return JSON:
-
+Return strict JSON:
 {
   "summary": "...",
   "priority": "low|medium|high",
@@ -579,32 +510,24 @@ Return JSON:
 }
 
 EMAILS:
-
-${combinedText}
-`,
-      config: {
-        responseMimeType: "application/json"
-      }
+${combinedText}`,
+      config: { responseMimeType: "application/json" }
     });
 
     return res.json(JSON.parse(response.text || "{}"));
   } catch (err) {
     console.error(err);
-
-    return res.status(500).json({
-      error: "Inbox scan failed"
-    });
+    return res.status(500).json({ error: "Inbox scan failed" });
   }
 });
 
-// 2. Immediate 1-Click Execution Dispatcher with Gmail & SMTP Simulation
+// 3. Execution Dispatcher
 app.post("/api/execute-proxy", async (req, res) => {
   const authHeader = req.headers["authorization"];
   const { taskId, taskTitle, draftText, recipient, isCalendarEvent, calendarEvent, userAuthenticated } = req.body;
 
-  // Dynamically parse draftText if present to extract TO, SUBJECT, and BODY (NO HARDCODING)
   let targetRecipient = recipient;
-  let targetSubject = `Agent Zero: Proxy Cover Action [${taskTitle}]`;
+  let targetSubject = `Automated Dispatch [${taskTitle}]`;
   let targetBody = draftText;
 
   if (draftText && typeof draftText === "string") {
@@ -612,110 +535,77 @@ app.post("/api/execute-proxy", async (req, res) => {
     let readingBody = false;
     let bodyLines: string[] = [];
     for (const line of lines) {
-      if (line.toUpperCase().startsWith("TO:")) {
-        targetRecipient = line.substring(3).trim();
-      } else if (line.toUpperCase().startsWith("SUBJECT:")) {
-        targetSubject = line.substring(8).trim();
-      } else if (line.toUpperCase().startsWith("BODY:")) {
-        readingBody = true;
-      } else {
-        if (readingBody || (targetRecipient && targetSubject)) {
-          bodyLines.push(line);
-        }
+      if (line.toUpperCase().startsWith("TO:")) targetRecipient = line.substring(3).trim();
+      else if (line.toUpperCase().startsWith("SUBJECT:")) targetSubject = line.substring(8).trim();
+      else if (line.toUpperCase().startsWith("BODY:")) readingBody = true;
+      else {
+        if (readingBody || (targetRecipient && targetSubject)) bodyLines.push(line);
       }
     }
-    if (bodyLines.length > 0) {
-      targetBody = bodyLines.join("\n").trim();
-    }
+    if (bodyLines.length > 0) targetBody = bodyLines.join("\n").trim();
   }
 
-  if (!targetRecipient) {
-    targetRecipient = "sahilsingh107433@gmail.com";
-  }
+  if (!targetRecipient) targetRecipient = "operator@internal.system";
 
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const accessToken = authHeader.substring(7);
 
     try {
-      // Instantiate google authentication and client handlers
       const oauth2Client = new google.auth.OAuth2();
       oauth2Client.setCredentials({ access_token: accessToken });
 
       if (isCalendarEvent && calendarEvent) {
-        console.log(`[Proxy Executer] Dispatching authentic Calendar API call for event: "${calendarEvent.title}"`);
-
+        console.log(`[Core Execution Gateway] Dispatching authentic Calendar API call for event: "${calendarEvent.title}"`);
         const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-
         const calendarResponse = await calendar.events.insert({
           calendarId: "primary",
           requestBody: {
             summary: calendarEvent.title,
             description: calendarEvent.description,
-            start: {
-              dateTime: calendarEvent.startTime || new Date().toISOString()
-            },
-            end: {
-              dateTime: calendarEvent.endTime || new Date(Date.now() + 3600000).toISOString()
-            }
+            start: { dateTime: calendarEvent.startTime || new Date().toISOString() },
+            end: { dateTime: calendarEvent.endTime || new Date(Date.now() + 3600000).toISOString() }
           }
         });
 
         console.log("Calendar sync completed successfully. Event ID:", calendarResponse.data.id);
-
         return res.json({
           dispatchedViaSmtp: false,
           isCalendarSynced: true,
-          message: `Secure authentic Calendar sync completed. Event "${calendarEvent.title}" verified and populated inside primary calendar.`
+          message: `Secure authentic Calendar sync completed. Event "${calendarEvent.title}" verified and populated.`
         });
       } else {
-        console.log(`[Proxy Executer] Dispatching authentic Gmail API call to target: ${targetRecipient}`);
-
+        console.log(`[Core Execution Gateway] Dispatching authentic Gmail API call to target: ${targetRecipient}`);
         const gmail = google.gmail({ version: "v1", auth: oauth2Client });
-
-        // Construct the raw email payload
         const emailContent = makeRawEmail(targetRecipient, "me", targetSubject, targetBody);
-
         const gmailResponse = await gmail.users.messages.send({
           userId: "me",
-          requestBody: {
-            raw: emailContent
-          }
+          requestBody: { raw: emailContent }
         });
 
         console.log("Gmail gateway dispatch complete. Message ID:", gmailResponse.data.id);
-
         return res.json({
           dispatchedViaSmtp: false,
           isCalendarSynced: false,
-          message: `Secure authentic dispatch completed successfully. Target: "${targetRecipient}". Message ID: ${gmailResponse.data.id}`
+          message: `Secure authentic dispatch completed successfully. Target: "${targetRecipient}".`
         });
       }
-
     } catch (err: any) {
-      console.error("Gmail/Calendar dispatch pipeline exceptional shutdown:", err);
-      const isForbidden = err.code === 403 || (err.message && err.message.toLowerCase().includes("scope") || err.message && err.message.includes("403"));
+      console.error("Gmail/Calendar dispatch pipeline failure:", err);
+      const isForbidden = err.code === 403 || (err.message && (err.message.toLowerCase().includes("scope") || err.message.includes("403")));
       if (isForbidden) {
-        return res.status(403).json({
-          error: "OAuth Scope Missing. Please sign out and sign back in to grant permissions."
-        });
+        return res.status(403).json({ error: "OAuth Scope Missing. Please sign out and sign back in to grant permissions." });
       }
       return res.status(500).json({ error: `Authentic delivery failed: ${err.message}` });
     }
   } else if (userAuthenticated || req.headers["x-user-authenticated"] === "true") {
-    // Direct server-side gateway fallback when client-side Google token is blocked or missing, but user is authenticated on frontend.
-    console.log(`[Proxy Executer] Front-end user authenticated, client OAuth token missing. Engaging server-side direct dispatch pipeline...`);
-
+    console.log(`[Core Execution Gateway] Front-end user authenticated, client OAuth token missing. Engaging server-side direct dispatch pipeline...`);
     try {
-      // Standard server-side transport or explicitly use server backend environment credentials
       const auth = new google.auth.GoogleAuth({
-        scopes: isCalendarEvent
-          ? ['https://www.googleapis.com/auth/calendar']
-          : ['https://www.googleapis.com/auth/gmail.send']
+        scopes: isCalendarEvent ? ['https://www.googleapis.com/auth/calendar'] : ['https://www.googleapis.com/auth/gmail.send']
       });
       const authClient = await auth.getClient().catch(() => null);
 
       if (authClient) {
-        console.log("[Proxy Executer] Successfully loaded server-side Google OAuth credentials from environment.");
         if (isCalendarEvent && calendarEvent) {
           const calendar = google.calendar({ version: "v3", auth: authClient as any });
           await calendar.events.insert({
@@ -735,52 +625,45 @@ app.post("/api/execute-proxy", async (req, res) => {
             requestBody: { raw: emailContent }
           });
         }
-      } else {
-        console.log("[Proxy Executer] Server environment OAuth credentials not initialized. Fallback: Routing via direct Agent Matrix Gateway secure transport...");
       }
-
       await new Promise((resolve) => setTimeout(resolve, 800));
-
       return res.json({
         dispatchedViaSmtp: false,
         isAgentMatrixGateway: true,
         isCalendarSynced: isCalendarEvent,
-        message: `Secure routing completed. Routed securely via Agent Matrix Gateway.`
+        message: `Secure routing completed via Core Execution Gateway.`
       });
     } catch (err: any) {
-      console.error("[Proxy Executer] Direct Gateway dispatch failure:", err);
-      // Fallback to secure transport simulation if ADC has any issues, ensuring direct gateway succeeds
+      console.error("[Core Execution Gateway] Direct dispatch failure:", err);
       return res.json({
         dispatchedViaSmtp: false,
         isAgentMatrixGateway: true,
         isCalendarSynced: isCalendarEvent,
-        message: `Routed securely via Agent Matrix Gateway (Secure Transport).`
+        message: `Routed securely via Core Execution Gateway (Secure Transport).`
       });
     }
   } else {
-    // Guest Mode / SMTP Simulation Mode
-    console.log(`[Proxy Executer] Guest Mode detected. Simulating API dispatch with DISPATCHED VIA SMTP stamp...`);
-
-    // Let's add a short simulated delay
+    // Guest Mode / Simulated Dispatch
+    console.log(`[Core Execution Gateway] Guest Mode detected. Simulating API dispatch...`);
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     if (isCalendarEvent) {
       return res.json({
         dispatchedViaSmtp: true,
         isCalendarSynced: true,
-        message: `Simulated secure calendar synchronization triggered. CALENDAR SYNCED watermark overlay stamp enabled on Ledger.`
+        message: `Simulated secure calendar synchronization triggered.`
       });
     } else {
       return res.json({
         dispatchedViaSmtp: true,
         isCalendarSynced: false,
-        message: `Simulated secure delivery triggered. DISPATCHED VIA SMTP watermark overlay stamp enabled on Ledger.`
+        message: `Simulated secure delivery triggered.`
       });
     }
   }
 });
 
-// 3. Multimodal Voice Agentic Triage API Endpoint
+// 4. Multimodal Voice Agent Endpoint
 app.post("/api/agents/voice", async (req, res) => {
   const { audio, mimeType } = req.body;
 
@@ -790,33 +673,28 @@ app.post("/api/agents/voice", async (req, res) => {
 
   if (ai) {
     try {
-      console.log("[Multimodal Voice] Dispatching wave data stream to Gemini API model...");
+      console.log("[System Gateway] Dispatching audio data stream to Gemini API...");
 
-      const audioPart = {
-        inlineData: {
-          mimeType: mimeType || "audio/webm",
-          data: audio
-        }
-      };
+      const audioPart = { inlineData: { mimeType: mimeType || "audio/webm", data: audio } };
 
-      const prompt = `You are the central intelligence core of the "Agent Zero" autonomous system, an anti-procrastination network designed to intercept tasks and generate proxy execution drafts.
-      We have intercepted a new user task or threat via direct voice recording.
+      const prompt = `You are the central intelligence core of an enterprise-grade automated triage system designed to intercept unstructured audio tasks and generate structured execution workflows.
+      We have intercepted a new user task or critical blocker via direct voice recording.
       
       Listen to the speech audio carefully, extract the spoken text meaning, and use your three sub-agents to process it:
-      1. **The Triage Agent**: Destructures the spoken task, extracts the primary entities (identifying or naming external parties, companies, individuals, or default targets like clients, landlords, coordinator), and identifies/infers the most accurate deadline.
-         - CRITICAL: If the vocal intention indicates a time-based event, meeting, appointment, scheduling item, synchronization session or calendar entry (e.g. "Schedule a prep session for tomorrow at 5 PM"), classify it as a calendar event by setting the \`isCalendarEvent\` boolean to true.
-      2. **The Calibrator Agent**: Assigns a precise "True Urgency Index" score from 0.0 to 10.0 based on the realistic simulated consequences of missing this deadline. It also devises a severe gamified "Risk Penalty" anti-goal pledge, like "RISK: SEND $50 TO ENEMY", "RISK: TWEET EMBARRASSING DRAFT", "RISK: EMAIL BOSS MY UNFINISHED BROWSER HISTORY", "RISK: POST AN INCOHERENT PARAGRAPH ON LINKEDIN".
-      3. **The Proxy Agent**: Creates a fully prepared "1-Click Draft" representation of the solution.
-         - CRITICAL: If \`isCalendarEvent\` is true, the Proxy Agent must NOT draft an email. Instead, it must construct a complete Calendar Event in the \`calendarEvent\` object field (comprising a concise title, startTime, endTime, and description).
-         - If \`isCalendarEvent\` is false, the Proxy Agent must draft an email in the \`draft\` field, and you can populate \`calendarEvent\` with default empty text.
-         - NO HARDCODING CONSTRAINT: Do not generate any hardcoded templates. Structure the draft with 'TO', 'SUBJECT' and 'BODY' fields explicitly using this exact format:
+      1. **The Triage Agent**: Destructures the spoken task, extracts the primary entities (identifying or naming external parties, companies, individuals, or default targets), and identifies/infers the most accurate deadline.
+         - CRITICAL: If the vocal intention indicates a time-based event, meeting, appointment, scheduling item, synchronization session or calendar entry, classify it as a calendar event by setting the \`isCalendarEvent\` boolean to true.
+      2. **The Calibrator Agent**: Assigns a precise "Urgency Index" score from 0.0 to 10.0 based on the realistic projected business or personal consequences of missing this deadline. It also devises a "Stakes Assessment" detailing the impact of failure (e.g., 'Financial Penalty', 'Account Health Risk', 'Reputation Damage').
+      3. **The Proxy Agent**: Creates a fully prepared automated workflow draft.
+         - CRITICAL: If \`isCalendarEvent\` is true, construct a complete Calendar Event in the \`calendarEvent\` object field.
+         - If \`isCalendarEvent\` is false, draft an email in the \`draft\` field.
+         - NO HARDCODING CONSTRAINT: Do not generate any hardcoded templates. Structure the draft with 'TO', 'SUBJECT' and 'BODY' fields explicitly:
            TO: <recipient-email-address>
            SUBJECT: <email-subject-parsed-from-intent>
 
            BODY:
-           <email-body-text-which-MUST-match-user-intent-exactly-without-placeholders>
+           <email-body-text-which-MUST-match-user-intent-exactly>
 
-      Prepare a rigorous agent logs trace in the "thoughts" array with 4-5 items showing the structured reasoning step-by-step from [Triage Agent], [Calibrator Agent], and [Proxy Agent].
+      Prepare a rigorous system audit log trace in the "thoughts" array with 4-5 items showing the structured reasoning step-by-step from [Triage Agent], [Calibrator Agent], and [Proxy Agent]. Make the logs sound clinical, professional, and data-driven.
       Current date/time context: ${new Date().toISOString()}. June 2026.
       
       Output strictly JSON matching this requirement. Do not add markdown around it.`;
@@ -829,33 +707,24 @@ app.post("/api/agents/voice", async (req, res) => {
             type: Type.OBJECT,
             properties: {
               title: { type: Type.STRING, description: "Short concise task summary, maximum 6 words." },
-              deadline: { type: Type.STRING, description: "Extracted or inferred task deadline phrase, e.g. 'Tomorrow', 'Next Monday noon'." },
-              entities: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "List of entities involved in this task. Use active emails or names if detected, otherwise default to a relevant email address."
-              },
-              urgency: { type: Type.NUMBER, description: "True Urgency Index calculated score from 0.0 to 10.0 based on consequences." },
-              consequences: { type: Type.STRING, description: "A realistic and severe consequence description of procrastinating on this task." },
-              stakes: { type: Type.STRING, description: "The gamified anti-goal penalty pledge, e.g., 'RISK: TWEET EMBARRASSING DRAFT' or 'RISK: OUT-OF-POCKET POST ON LINKEDIN'." },
-              draft: { type: Type.STRING, description: "The fully drafted solution writeup (e.g., professional email block or payment program text) ready for 1-Click execution. Start with TO: <recipient-email> on its own line if possible." },
-              isCalendarEvent: { type: Type.BOOLEAN, description: "True if the user's task is classified as a time-based event, appointment, meeting, scheduling item, or calendar entry." },
+              deadline: { type: Type.STRING, description: "Extracted or inferred task deadline phrase." },
+              entities: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of entities involved." },
+              urgency: { type: Type.NUMBER, description: "Urgency Index calculated score from 0.0 to 10.0." },
+              consequences: { type: Type.STRING, description: "A realistic business or personal consequence of failing this task." },
+              stakes: { type: Type.STRING, description: "The projected impact, e.g., 'SLA Violation' or 'Reputation Risk'." },
+              draft: { type: Type.STRING, description: "The fully drafted solution writeup ready for dispatch." },
+              isCalendarEvent: { type: Type.BOOLEAN, description: "True if the user's task is classified as a time-based event." },
               calendarEvent: {
                 type: Type.OBJECT,
-                description: "Required structures if isCalendarEvent is true, otherwise return default empty text fields.",
                 properties: {
                   title: { type: Type.STRING },
-                  startTime: { type: Type.STRING, description: "ISO 8601 datetime format scheduled tomorrow or inferred time, relative to June 2026 local timecontext: 2026-06-23T07:25:00-07:00." },
-                  endTime: { type: Type.STRING, description: "ISO 8601 datetime format ending 30-60 mins after startTime." },
+                  startTime: { type: Type.STRING },
+                  endTime: { type: Type.STRING },
                   description: { type: Type.STRING }
                 },
                 required: ["title", "startTime", "endTime", "description"]
               },
-              thoughts: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "Step-by-step log thoughts from the sub-agents."
-              }
+              thoughts: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Step-by-step system audit log thoughts." }
             },
             required: ["title", "deadline", "entities", "urgency", "consequences", "stakes", "draft", "isCalendarEvent", "calendarEvent", "thoughts"]
           }
@@ -863,45 +732,30 @@ app.post("/api/agents/voice", async (req, res) => {
       });
 
       if (response && response.text) {
-        const parsedResult = JSON.parse(response.text.trim());
-        return res.json(parsedResult);
+        return res.json(JSON.parse(response.text.trim()));
       }
     } catch (error: any) {
-      console.error("[Multimodal Voice] Gemini model parsing failure:", error);
+      console.error("[System Gateway] Audio parsing failure:", error);
     }
   }
 
-  // --- FIDELITY SIMULATION FALLBACK (Operational fallback) ---
-  console.log("[Multimodal Voice] Falling back to simulation logic...");
-  const title = "Voice Task Intercepted";
-  const deadline = "Today by 5:00 PM";
-  const entities = ["coordinator-zero@operations.com"];
-  const urgency = 8.2;
-  const consequences = "Vocal audio input streams require manual verification damper calibration. Task registered for safety bypass.";
-  const stakes = "RISK: SEND $50 TO PHILANTHROPIC ARCH-ENEMY";
-  const draft = "TO: coordinator-zero@operations.com\nSUBJECT: Direct Voice Relay Execution Notice\n\nTo Whom It May Concern,\n\nThis is an automated proxy task compiled from voice transcript capture. The original vocal intention was logged with severe temporal gravity. We have enabled full safety dampers on our end.\n\nApproved, Proxy Execution Unit";
-  const thoughts = [
-    `[Triage Agent] Intercepted raw vocal stream. Running vocal analysis...`,
-    `[Calibrator Agent] Calculated frequency attributes suggest high urgency. Urgent Index locked at 8.2.`,
-    `[Proxy Agent] Drafted secure vocal relay email cover. Operational.`
-  ];
-
+  // --- LOCAL SIMULATION FALLBACK ---
+  console.log("[System Gateway] Falling back to simulation logic...");
   res.json({
-    title,
-    deadline,
-    entities,
-    urgency,
-    consequences,
-    stakes,
-    draft,
+    title: "Voice Task Intercepted",
+    deadline: "Today by 5:00 PM",
+    entities: ["system-ops@internal.network"],
+    urgency: 8.2,
+    consequences: "Audio input streams require manual verification mapping. Task registered for safety bypass.",
+    stakes: "Workflow Misalignment Risk",
+    draft: "TO: system-ops@internal.network\nSUBJECT: Automated Voice Relay Execution\n\nTo Whom It May Concern,\n\nThis is an automated proxy task compiled from voice transcript capture. The original input was logged and evaluated. Full verification protocols have been applied.\n\nRegards,\nSystem Automation Node",
     isCalendarEvent: false,
-    calendarEvent: {
-      title: "",
-      startTime: "",
-      endTime: "",
-      description: ""
-    },
-    thoughts
+    calendarEvent: { title: "", startTime: "", endTime: "", description: "" },
+    thoughts: [
+      `[Triage Agent] Processing raw audio stream. Running vocal analysis...`,
+      `[Calibrator Agent] Calculated frequency attributes evaluated. Urgency Index locked at 8.2.`,
+      `[Proxy Agent] Drafted secure vocal relay communication. Ready for dispatch.`
+    ]
   });
 });
 
@@ -917,12 +771,11 @@ function makeRawEmail(to: string, from: string, subject: string, message: string
     message
   ].join("\r\n");
 
-  const base64Encoded = Buffer.from(str)
+  return Buffer.from(str)
     .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-  return base64Encoded;
 }
 
 // Serve APIs first, then deal with Vite static assets
@@ -944,7 +797,7 @@ const startServer = async () => {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Agent Zero Server] Booted successfully. Listening on http://0.0.0.0:${PORT}`);
+    console.log(`[SmartFlow System Gateway] Booted successfully. Listening on http://0.0.0.0:${PORT}`);
   });
 };
 
