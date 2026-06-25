@@ -59,9 +59,9 @@ export function useProxy({
     setIsDispatching(true);
     addSystemLog('Proxy Agent', `Executing authorized dispatch for target: "${task.title}"`, 'action');
 
-    if (task.intent_type === 'THREAT' || task.urgency >= 8.5) {
+    if (task.intent_type === 'THREAT' || (task.urgency && task.urgency >= 8.5)) {
       addSystemLog('System', '[ROUTING DECISION]: CRITICAL PRIORITY', 'warning');
-      addSystemLog('System', '[URGENCY INDEX]: 9.5', 'warning');
+      addSystemLog('System', `[URGENCY INDEX]: ${(task.urgency || 9.5).toFixed(1)}`, 'warning');
     }
 
     try {
@@ -77,8 +77,10 @@ export function useProxy({
           try {
             addSystemLog('Proxy Agent', `Initiating simultaneous Gmail & Calendar REST dispatches...`, 'action');
 
-            const { to, subject, body } = parseEmailDraft(task.draft);
-            const emailContent = createRawEmail(to, "me", subject, body);
+            const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: `Automated Update: ${task.title}`, body: "Automated mitigation deployed." };
+            // FIX: Ensure recipient is never empty for Gmail API
+            const safeRecipient = parsedEmail.to && parsedEmail.to.trim() !== "" ? parsedEmail.to : "placeholder@example.com";
+            const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
             const gmailPromise = fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
               method: 'POST',
@@ -184,7 +186,7 @@ export function useProxy({
         try {
           let response: Response;
 
-          if (task.isCalendarEvent) {
+          if (task.intent_type === 'CALENDAR' || task.isCalendarEvent) {
             addSystemLog('Proxy Agent', `Initiating Workspace Calendar API synchronization...`, 'action');
             response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
               method: 'POST',
@@ -198,8 +200,11 @@ export function useProxy({
             });
           } else {
             addSystemLog('Proxy Agent', `Initiating Workspace Gmail API dispatch...`, 'action');
-            const { to, subject, body } = parseEmailDraft(task.draft);
-            const emailContent = createRawEmail(to, "me", subject, body);
+            const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: task.title, body: "Automated task execution." };
+
+            // FIX: Ensure recipient is never empty for Gmail API
+            const safeRecipient = parsedEmail.to && parsedEmail.to.trim() !== "" ? parsedEmail.to : "placeholder@example.com";
+            const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
             response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
               method: 'POST',
@@ -226,7 +231,7 @@ export function useProxy({
           clearTaskWarning(task.id);
 
           let prepDocUrl: string | undefined;
-          if (task.isCalendarEvent) {
+          if (task.intent_type === 'CALENDAR' || task.isCalendarEvent) {
             const generatedPrepDocUrl = await generatePrepDoc(
               activeToken,
               task.calendarEvent?.title || task.title,
@@ -235,14 +240,16 @@ export function useProxy({
             prepDocUrl = generatedPrepDocUrl ?? undefined;
           }
 
+          const isCalAction = task.intent_type === 'CALENDAR' || task.isCalendarEvent;
+
           const executionState = {
             status: 'executed' as const,
             prepDocUrl,
             isSmtpSimulated: false,
             isWorkspaceSynced: true,
             isAgentMatrixGateway: false,
-            isNativeGmailApi: !task.isCalendarEvent,
-            isCalendarSynced: !!task.isCalendarEvent,
+            isNativeGmailApi: !isCalAction,
+            isCalendarSynced: !!isCalAction,
           };
 
           if (user && isFirestoreEnabled) {
@@ -258,12 +265,12 @@ export function useProxy({
             updateLocalTaskState(task.id, executionState);
           }
 
-          const successLogMsg = task.isCalendarEvent
+          const successLogMsg = isCalAction
             ? `CALENDAR SECURED: "${task.calendarEvent?.title || task.title}". Synchronization successful.`
             : `DISPATCH SUCCESS: "${task.title}". Delivered securely via Native API.`;
 
           addSystemLog('Proxy Agent', successLogMsg, 'success');
-          showToast(task.isCalendarEvent ? "Event synchronized successfully." : "Dispatch successful.");
+          showToast(isCalAction ? "Event synchronized successfully." : "Dispatch successful.");
 
         } catch (err: any) {
           console.error("Standard Dispatch Error:", err);
@@ -281,7 +288,7 @@ export function useProxy({
         if (user) {
           throw new Error("Workspace Session Expired. Please sign in again.");
         } else {
-          const isCal = !!task.isCalendarEvent;
+          const isCal = task.intent_type === 'CALENDAR' || task.isCalendarEvent;
           addSystemLog('Proxy Agent', `Guest Mode active. Simulating API dispatch workflow...`, 'info');
 
           await new Promise(resolve => setTimeout(resolve, 800));
@@ -292,7 +299,7 @@ export function useProxy({
             isWorkspaceSynced: false,
             isAgentMatrixGateway: false,
             isNativeGmailApi: false,
-            isCalendarSynced: isCal,
+            isCalendarSynced: !!isCal,
           });
 
           addSystemLog('Proxy Agent', `DISPATCH SUCCESS: "${task.title}". [SIMULATED] Workflow executed via local relay.`, 'success');

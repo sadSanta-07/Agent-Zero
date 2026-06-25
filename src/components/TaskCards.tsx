@@ -221,7 +221,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
 
 
 // ---------------------------------------------------------------------------
-// 4. AMBIGUOUS CHOICE CARD (NEW!)
+// 4. AMBIGUOUS CHOICE CARD (UPDATED)
 // ---------------------------------------------------------------------------
 export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
   task,
@@ -233,13 +233,15 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
   const handleExecute = async () => {
     if (!selectedRoute) return;
 
-    // Mutate the task before sending it to the proxy based on user choice
     if (selectedRoute === 'email') {
       await handleExecuteProxy({ ...task, intent_type: 'EMAIL', calendarEvent: undefined });
     } else if (selectedRoute === 'calendar') {
       await handleExecuteProxy({ ...task, intent_type: 'CALENDAR', draft: "" });
     }
   };
+
+  // Extract the drafted subject line if it exists
+  const parsedSubject = task.draft ? parseEmailDraft(task.draft).subject : null;
 
   return (
     <div id={`ambiguous-card-${task.id}`} className="bg-brand-surface border border-yellow-400 p-5 rounded-[3px] flex flex-col gap-4 shadow-sm">
@@ -252,9 +254,20 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
         <div className="flex-1">
           <h4 className="text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary">{task.title}</h4>
         </div>
-        <button onClick={() => handleDeleteTask(task.id)} className="text-brand-text-secondary hover:text-red-700 p-1"
-          title="Remove Task"
-          aria-label="Remove Task"><Trash2 className="w-4 h-4" /></button>
+        
+        {/* FIX 1: Display the Urgency Index here */}
+        <div className="text-right flex items-start gap-6 shrink-0">
+          <div>
+            <div className="font-space-mono text-[10px] text-brand-text-secondary uppercase tracking-wider whitespace-nowrap">Urgency Index</div>
+            <div className={`font-space-mono text-[16px] font-bold leading-none mt-1 ${task.urgency && task.urgency >= 8 ? 'text-red-700' : 'text-yellow-600'}`}>
+              {(task.urgency || 5.0).toFixed(1)}/10
+            </div>
+          </div>
+          <button onClick={() => handleDeleteTask(task.id)} className="text-brand-text-secondary hover:text-red-700 p-1"
+            title="Remove Task"
+            aria-label="Remove Task"><Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="p-3 bg-brand-bg border border-brand-border rounded-xs text-[14px]">
@@ -267,7 +280,8 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
       {task.status !== 'executed' ? (
         <div className="flex flex-col gap-3 mt-2">
           <div className="grid grid-cols-2 gap-4">
-            {/* Email Choice */}
+            
+            {/* FIX 2: Dynamic Email Choice Preview */}
             <button
               onClick={() => setSelectedRoute('email')}
               className={`p-4 border rounded-[3px] text-left transition-all ${selectedRoute === 'email' ? 'border-brand-primary bg-brand-primary/5' : 'border-brand-border bg-brand-bg hover:border-brand-text-secondary'}`}
@@ -276,10 +290,12 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
                 <Mail className="w-4 h-4" />
                 <span className="font-space-mono text-[12px] font-bold uppercase tracking-wider">Draft Email</span>
               </div>
-              <div className="text-[11px] font-public-sans text-brand-text-secondary">Proceed with sending a communication update.</div>
+              <div className="text-[11px] font-public-sans text-brand-text-secondary font-medium italic">
+                {parsedSubject ? `Subject: "${parsedSubject}"` : "Proceed with sending a communication update."}
+              </div>
             </button>
 
-            {/* Calendar Choice */}
+            {/* FIX 2: Dynamic Calendar Choice Preview */}
             <button
               onClick={() => setSelectedRoute('calendar')}
               className={`p-4 border rounded-[3px] text-left transition-all ${selectedRoute === 'calendar' ? 'border-brand-primary bg-brand-primary/5' : 'border-brand-border bg-brand-bg hover:border-brand-text-secondary'}`}
@@ -288,7 +304,9 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
                 <Calendar className="w-4 h-4" />
                 <span className="font-space-mono text-[12px] font-bold uppercase tracking-wider">Block Calendar</span>
               </div>
-              <div className="text-[11px] font-public-sans text-brand-text-secondary">Proceed with scheduling an event block.</div>
+              <div className="text-[11px] font-public-sans text-brand-text-secondary font-medium italic">
+                {task.calendarEvent?.title ? `Event: "${task.calendarEvent.title}"` : "Proceed with scheduling an event block."}
+              </div>
             </button>
           </div>
 
@@ -299,6 +317,14 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
           >
             <Play className={`w-4 h-4 ${selectedRoute ? 'fill-brand-surface' : ''}`} />
             <span>Execute Selected Route</span>
+          </button>
+
+          {/* FIX 3: Tertiary "Dismiss" Button */}
+          <button
+             onClick={() => handleDeleteTask(task.id)}
+             className="w-full py-2 text-[12px] font-space-mono uppercase tracking-wider text-brand-text-secondary hover:text-brand-text-primary transition-colors mt-1"
+          >
+             Acknowledge & Dismiss Task
           </button>
         </div>
       ) : (
