@@ -23,8 +23,12 @@ import { useTriage } from "./hooks/useTriage";
 import { useProxy } from "./hooks/useProxy";
 import { useVoiceRecorder } from "./hooks/useVoiceRecorder";
 import { createTaskDocument } from "./services/firestoreService";
+import { BootSequence } from "./components/BootSequence";
 
 export default function App() {
+  const [hasBooted, setHasBooted] = useState(() => {
+    return sessionStorage.getItem("agent_zero_booted") === "true";
+  });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'matrix' | 'logs'>('dashboard');
 
   const {
@@ -268,6 +272,20 @@ export default function App() {
 
     return 75.0 + (completionRatio * 25.0);
   }, [tasks, user]);
+
+  if (!hasBooted) {
+    return (
+      <BootSequence
+        onComplete={(selectedPrompt) => {
+          if (selectedPrompt) {
+            setRawInput(selectedPrompt);
+          }
+          sessionStorage.setItem("agent_zero_booted", "true");
+          setHasBooted(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="h-screen w-full bg-brand-bg text-brand-text-primary flex flex-col font-public-sans antialiased text-[14px] overflow-hidden">
