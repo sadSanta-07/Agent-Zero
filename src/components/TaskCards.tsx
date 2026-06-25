@@ -4,17 +4,18 @@ import type { Task } from "../types";
 import { parseEmailDraft } from "../services/email";
 
 const robustEmailParser = (rawText?: string, title?: string) => {
-  if (!rawText) return { to: "Extracted at runtime", subject: "Automated Dispatch", body: "" };
+  if (!rawText) return { to: "Pending Context...", subject: "Automated Dispatch", body: "" };
 
   const toMatch = rawText.match(/TO:\s*(.*?)(?=SUBJECT:|$)/i);
   const subMatch = rawText.match(/SUBJECT:\s*(.*?)(?=BODY:|$)/i);
   const bodyMatch = rawText.match(/BODY:\s*([\s\S]*)/i);
 
-  let to = toMatch ? toMatch[1].trim() : "Extracted at runtime";
+  let to = toMatch ? toMatch[1].trim() : "Pending Context...";
   let subject = subMatch ? subMatch[1].trim() : "Automated Update";
   let body = bodyMatch ? bodyMatch[1].trim() : rawText;
 
-  if (to === 'team@company.com' || to === 'placeholder@example.com' || !to.includes('@')) {
+  // Intercept generic fallbacks and "Pending" states to display the actual Memory Matrix value
+  if (to === 'team@company.com' || to === 'placeholder@example.com' || !to.includes('@') || to === 'Pending Context...') {
     try {
       const words = (title || "").toLowerCase().split(/\s+/);
       for (let i = 0; i < localStorage.length; i++) {
@@ -33,7 +34,6 @@ const robustEmailParser = (rawText?: string, title?: string) => {
 
   return { to, subject, body };
 };
-
 interface TaskCardProps {
   task: Task & { prepDocUrl?: string };
   handleDeleteTask: (id: string) => void;
