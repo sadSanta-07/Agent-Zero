@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Public Sans", sans-serif;
+  --font-mono: "Space Mono", monospace;
+
+  /* Custom Color System for Agent Zero */
+  --color-brand-bg: #fbfaf5;
+  --color-brand-surface: #f4f1ea;
+  --color-brand-primary: #157f5b;
+  --color-brand-hover: #0f5f44;
+  --color-brand-border: #d8d2c4;
+  --color-brand-text-primary: #14171a;
+  --color-brand-text-secondary: #5a6066;
+}
+
+@layer base {
+  body {
+    background-color: #fbfaf5;
+    color: #14171a;
+    font-family: "Public Sans", sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* 0.6s Initial container fade-up animation */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 0.2s Smooth transitions for hover interactive paths */
+.transition-all-custom {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Font helpers for the brand */
+.font-fraunces {
+  font-family: "Fraunces", Georgia, serif;
+}
+
+.font-public-sans {
+  font-family: "Public Sans", sans-serif;
+}
+
+.font-space-mono {
+  font-family: "Space Mono", monospace;
+}
