@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Public+Sans:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #157f5b;
+      --primary-hover: #0f5f44;
+      --background: #fbfaf5;
+      --text-primary: #14171a;
+      --text-secondary: #5a6066;
+      --text-inverse: #f4f1ea;
+      --border: #d8d2c4;
+      --accent-badge-bg: #f8ecd6;
+      --accent-badge-text: #9a5b00;
+    }
+    
+    body {
+      width: 320px;
+      margin: 0;
+      padding: 20px;
+      background-color: var(--background);
+      color: var(--text-primary);
+      font-family: 'Public Sans', sans-serif;
+      border: 1px solid var(--border);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .badge {
+      background-color: var(--accent-badge-bg);
+      color: var(--accent-badge-text);
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      color: var(--text-secondary);
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 80px;
+      background-color: var(--background);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: 'Public Sans', sans-serif;
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 2px;
+      box-sizing: border-box;
+      resize: none;
+      transition: border-color 0.1s ease-out, outline-color 0.1s ease-out;
+    }
+
+    textarea:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: -1px;
+      border-color: var(--primary);
+    }
+
+    textarea::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.5;
+    }
+
+    button {
+      width: 100%;
+      background-color: var(--primary);
+      color: var(--text-inverse);
+      font-family: 'Public Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background-color 0.2s ease-out;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>Agent Zero</h2>
+    <span class="badge">Omnipresent</span>
+  </div>
+  <div class="input-group">
+    <label>Intention Receptacle</label>
+    <textarea id="intent-input" placeholder="Paste context or thought here..."></textarea>
+  </div>
+  <button id="dispatch-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    Process Thought
+  </button>
+
+  <script src="popup.js"></script>
+</body>
+</html>
