@@ -6,27 +6,28 @@ import { parseEmailDraft } from "../services/email";
 const robustEmailParser = (rawText?: string, title?: string) => {
   if (!rawText) return { to: "Pending Context...", subject: "Automated Dispatch", body: "" };
 
-  const toMatch = rawText.match(/TO:\s*(.*?)(?=SUBJECT:|$)/i);
-  const subMatch = rawText.match(/SUBJECT:\s*(.*?)(?=BODY:|$)/i);
+  const toMatch = rawText.match(/TO:\s*(.*?)(?=\n|SUBJECT:|$)/i);
+  const subMatch = rawText.match(/SUBJECT:\s*(.*?)(?=\n|BODY:|$)/i);
   const bodyMatch = rawText.match(/BODY:\s*([\s\S]*)/i);
 
   let to = toMatch ? toMatch[1].trim() : "Pending Context...";
   let subject = subMatch ? subMatch[1].trim() : "Automated Update";
   let body = bodyMatch ? bodyMatch[1].trim() : rawText;
 
-  // Intercept generic fallbacks and "Pending" states to display the actual Memory Matrix value
-  if (to === 'team@company.com' || to === 'placeholder@example.com' || !to.includes('@') || to === 'Pending Context...') {
+  if (to === 'team@company.com' || to === 'placeholder@example.com' || !to.includes('@') || to === 'Pending Context...' || to === 'Extracted at runtime') {
     try {
       const words = (title || "").toLowerCase().split(/\s+/);
       for (let i = 0; i < localStorage.length; i++) {
         const val = localStorage.getItem(localStorage.key(i) || "");
         if (val && val.includes('resolvedValue')) {
           const parsed = JSON.parse(val);
-          const match = parsed.find((item: any) => 
-            words.includes((item?.shortcode || "").toLowerCase()) || 
-            words.includes((item?.key || "").toLowerCase())
-          );
-          if (match && match.resolvedValue) to = match.resolvedValue;
+          if (Array.isArray(parsed)) {
+            const match = parsed.find((item: any) => 
+              words.includes((item?.shortcode || "").toLowerCase()) || 
+              words.includes((item?.key || "").toLowerCase())
+            );
+            if (match && match.resolvedValue) to = match.resolvedValue;
+          }
         }
       }
     } catch(e) {}
