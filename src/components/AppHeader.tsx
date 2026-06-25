@@ -10,82 +10,86 @@ interface AppHeaderProps {
 
 export function AppHeader({
   user,
-  isLoading: loadingAuth,
-  onLogin: handleGoogleLogin,
-  onLogout: handleLogout,
+  isLoading,
+  onLogin,
+  onLogout,
 }: AppHeaderProps) {
   return (
-      <header className="h-14 border-b border-brand-border z-40 bg-brand-bg flex items-center justify-between px-5 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="bg-brand-primary text-brand-bg p-2 leading-none font-bold select-none text-[13px] border border-brand-primary rounded-[1px]">
-            Ø0
-          </div>
-          <div>
-            <h1 className="text-base font-bold font-fraunces tracking-tight leading-none flex items-center gap-2">
-              Agent Zero 
-              <span className="text-[10px] font-space-mono text-brand-surface bg-brand-primary px-1.5 py-0.5 rounded-[1.5px] uppercase tracking-normal font-normal">
-                v1.0.4-STABLE
-              </span>
-            </h1>
-          </div>
+      <header className="h-18 border-b border-brand-border z-40 bg-brand-bg flex items-center justify-between px-8 sticky top-0">
+        
+        {/* Brand & Version Section */}
+        <div className="flex items-center gap-4">
+          <h1 className="text-[24px] font-normal font-['Fraunces'] text-brand-text-primary tracking-tight leading-none flex items-center gap-3 m-0">
+            Agent Zero 
+            {/* Version Badge using the design system's "badge-learned" styling */}
+            <span className="text-[10px] font-['Public_Sans'] bg-[#f8ecd6] text-[#9a5b00] px-1.5 py-0.5 rounded-xs uppercase tracking-wider font-normal">
+              v1.0.4
+            </span>
+          </h1>
         </div>
 
-        {/* Efficiency index block & Auth area */}
-        <div className="flex items-center gap-6">
+        {/* Stats & Auth Interface Area */}
+        <div className="flex items-center gap-8">
+          
+          {/* Efficiency Index - Redesigned for precision */}
           <div className="flex flex-col items-end max-md:hidden">
-            <span className="text-[10px] font-space-mono text-brand-text-secondary leading-none uppercase font-semibold">EFFICIENCY INDEX</span>
-            <span className="font-space-mono text-xs font-bold text-brand-primary mt-0.5">94.2%</span>
+            <span className="text-[12px] font-['Public_Sans'] text-brand-text-secondary leading-none uppercase tracking-wide">
+              Efficiency Index
+            </span>
+            <span className="font-['Space_Mono'] text-[14px] font-normal text-brand-text-primary mt-1">
+              94.2%
+            </span>
           </div>
 
-          <div className="h-6 w-px bg-brand-border max-md:hidden" />
+          {/* Divider */}
+          <div className="h-8 w-px bg-brand-border max-md:hidden" />
 
-          {/* Auth Interface area */}
-          <div className="flex items-center gap-3">
-            {loadingAuth ? (
-              <span className="text-[10px] font-space-mono text-brand-text-secondary animate-pulse">
-                SYNCING NODE...
+          {/* User Controls */}
+          <div className="flex items-center gap-4">
+            {isLoading ? (
+              <span className="text-[14px] font-['Public_Sans'] text-brand-text-secondary animate-pulse">
+                Authenticating...
               </span>
             ) : user ? (
-              <div className="flex items-center gap-2.5 bg-brand-surface border border-brand-border py-0.5 pl-2.5 pr-1 rounded-xs h-8">
+              <div className="flex items-center gap-4">
                 <div className="flex flex-col text-right">
-                  <span className="text-[11px] font-bold leading-none font-fraunces">
+                  <span className="text-[14px] font-medium font-['Public_Sans'] text-brand-text-primary leading-none">
                     {user.displayName || "Operator"}
                   </span>
-                  <span className="text-[8px] font-space-mono text-brand-primary font-bold leading-none mt-0.5">
-                    SECURE NODE
+                  <span className="text-[12px] font-['Public_Sans'] text-brand-primary leading-none mt-1">
+                    Connected
                   </span>
                 </div>
+                
                 {user.photoURL ? (
                   <img 
                     src={user.photoURL} 
                     alt="avatar" 
                     referrerPolicy="no-referrer"
-                    className="w-6 h-6 border border-brand-border hover:border-brand-primary transition-all-custom rounded-full" 
+                    className="w-9 h-9 border border-brand-border rounded-[3px] object-cover" 
                   />
                 ) : (
-                  <div className="w-6 h-6 bg-brand-primary/20 flex items-center justify-center font-bold text-[10px] rounded-full">
+                  <div className="w-9 h-9 bg-[#ece8dd] flex items-center justify-center font-medium font-['Public_Sans'] text-brand-text-primary text-[14px] rounded-[3px] border border-brand-border">
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                 )}
+                
                 <button 
-                  onClick={handleLogout}
-                  title="Disconnect Node"
-                  className="p-1 text-brand-text-secondary hover:text-red-700 transition-all-custom"
+                  onClick={onLogout}
+                  title="Sign Out"
+                  className="p-2 text-brand-text-secondary hover:text-brand-text-primary hover:bg-[#ece8dd] rounded-xs transition-all duration-200 ease-out flex items-center justify-center"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] font-space-mono text-brand-primary max-sm:hidden bg-brand-surface border border-brand-border px-1.5 py-0.5 rounded-[1.5px] uppercase font-bold">
-                  GUEST VAULT
-                </span>
+              <div className="flex items-center gap-4">
                 <button
-                  onClick={handleGoogleLogin}
-                  className="bg-brand-primary text-brand-surface hover:bg-brand-hover text-[11px] font-bold px-3 py-1.5 rounded-xs transition-all-custom flex items-center gap-1.5 active:scale-95 cursor-pointer border border-transparent"
+                  onClick={onLogin}
+                  className="bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium font-['Public_Sans'] px-4 py-2 rounded-xs transition-colors duration-200 ease-out flex items-center gap-2 cursor-pointer border border-transparent"
                 >
-                  <Shield className="w-3 h-3" />
-                  <span>DISPATCH SIGN-IN</span>
+                  <Shield className="w-4 h-4" />
+                  <span>Sign In</span>
                 </button>
               </div>
             )}
