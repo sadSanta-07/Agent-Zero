@@ -63,7 +63,7 @@ export function useVoiceRecorder({
           try {
             const base64data = (reader.result as string).split(',')[1];
             
-            const response = await fetch("/api/agents/voice", {
+            const response = await fetch("https://agent-zero-backend.onrender.com/api/agents/voice", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json"
@@ -139,7 +139,7 @@ export function useVoiceRecorder({
                   draft: newTask.draft,
                   status: newTask.status,
                   isCalendarEvent: newTask.isCalendarEvent,
-                  calendarEvent: newTask.calendarEvent || null,
+                  calendarEvent: newTask.calendarEvent || undefined,
                   isShadowChronos: newTask.isShadowChronos || false,
                   createdAt: newTask.createdAt,
                   updatedAt: newTask.updatedAt

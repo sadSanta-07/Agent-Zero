@@ -165,7 +165,7 @@ export default function App() {
       console.log("ACTIONABLE EMAILS:", actionableEmails);
       console.log("FORMATTED EMAILS:", formattedEmails);
 
-      const aiResponse = await fetch("/api/agents/inbox-scan", {
+      const aiResponse = await fetch("https://agent-zero-backend.onrender.com/api/agents/inbox-scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails: actionableEmails }),
@@ -179,7 +179,7 @@ export default function App() {
 
       console.log("TRIAGE INPUT:", inboxRawText);
 
-      const triageResponse = await fetch("/api/agents/triage", {
+      const triageResponse = await fetch("https://agent-zero-backend.onrender.com/api/agents/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

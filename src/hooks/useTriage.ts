@@ -61,7 +61,7 @@ export function useTriage({
 
     try {
       // Trigger API endpoint on Node Express backend
-      const response = await fetch("/api/agents/triage", {
+      const response = await fetch("https://agent-zero-backend.onrender.com/api/agents/triage", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -167,7 +167,7 @@ export function useTriage({
             status: newTask.status,
             isCalendarEvent: newTask.isCalendarEvent,
             isShadowChronos: newTask.isShadowChronos || false,
-            calendarEvent: newTask.calendarEvent || null,
+            calendarEvent: newTask.calendarEvent ?? undefined,
             createdAt: newTask.createdAt,
             updatedAt: newTask.updatedAt
           });
