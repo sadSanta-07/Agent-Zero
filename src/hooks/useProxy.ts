@@ -54,9 +54,15 @@ export function useProxy({
     setTaskScopeWarnings((prev) => ({ ...prev, [taskId]: message }));
   };
 
-  const resolveContactEmail = (rawTo: string) => {
-    if (!rawTo || rawTo.trim() === "") return "placeholder@example.com";
-    const cleanName = rawTo.replace(/[[\]'"]/g, '').trim();
+  const resolveContactEmail = (rawTo: string, fullDraft?: string) => {
+    let cleanName = (rawTo || "").replace(/[[\]'"]/g, '').trim();
+
+    if (!cleanName && fullDraft) {
+      const emailRegexMatch = fullDraft.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (emailRegexMatch) cleanName = emailRegexMatch[0];
+    }
+
+    if (!cleanName) return "placeholder@example.com";
 
     if (cleanName.includes('@')) return cleanName;
 
@@ -68,8 +74,8 @@ export function useProxy({
           if (val && val.includes('resolvedValue')) {
             const parsed = JSON.parse(val);
             if (Array.isArray(parsed)) {
-              const match = parsed.find(item => 
-                item?.shortcode?.toLowerCase() === cleanName.toLowerCase() || 
+              const match = parsed.find(item =>
+                item?.shortcode?.toLowerCase() === cleanName.toLowerCase() ||
                 item?.key?.toLowerCase() === cleanName.toLowerCase()
               );
               if (match && match.resolvedValue && match.resolvedValue.includes('@')) {
@@ -82,7 +88,7 @@ export function useProxy({
     } catch (e) {
       console.warn("Memory matrix lookup bypassed.");
     }
-    
+
     return "placeholder@example.com";
   };
 
@@ -110,7 +116,7 @@ export function useProxy({
             addSystemLog('Proxy Agent', `Initiating simultaneous Gmail & Calendar REST dispatches...`, 'action');
 
             const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: `Automated Update: ${task.title}`, body: "Automated mitigation deployed." };
-            
+
             const safeRecipient = resolveContactEmail(parsedEmail.to);
             const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
