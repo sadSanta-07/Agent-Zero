@@ -6,6 +6,8 @@ interface AppHeaderProps {
   isLoading: boolean;
   onLogin: () => void;
   onLogout: () => void;
+  // Add the new prop here
+  efficiencyIndex?: number | null; 
 }
 
 export function AppHeader({
@@ -13,6 +15,7 @@ export function AppHeader({
   isLoading,
   onLogin,
   onLogout,
+  efficiencyIndex = null,
 }: AppHeaderProps) {
   return (
       <header className="h-18 border-b border-brand-border z-40 bg-brand-bg flex items-center justify-between px-8 sticky top-0">
@@ -21,7 +24,7 @@ export function AppHeader({
         <div className="flex items-center gap-4">
           <h1 className="text-[24px] font-normal font-['Fraunces'] text-brand-text-primary tracking-tight leading-none flex items-center gap-3 m-0">
             Agent Zero 
-            {/* Version Badge using the design system's "badge-learned" styling */}
+            {/* Version Badge */}
             <span className="text-[10px] font-['Public_Sans'] bg-[#f8ecd6] text-[#9a5b00] px-1.5 py-0.5 rounded-xs uppercase tracking-wider font-normal">
               v1.0.4
             </span>
@@ -31,13 +34,16 @@ export function AppHeader({
         {/* Stats & Auth Interface Area */}
         <div className="flex items-center gap-8">
           
-          {/* Efficiency Index - Redesigned for precision */}
+          {/* Efficiency Index - Now Dynamic */}
           <div className="flex flex-col items-end max-md:hidden">
             <span className="text-[12px] font-['Public_Sans'] text-brand-text-secondary leading-none uppercase tracking-wide">
               Efficiency Index
             </span>
             <span className="font-['Space_Mono'] text-[14px] font-normal text-brand-text-primary mt-1">
-              94.2%
+              {/* Only show the number if the user is logged in and the index exists */}
+              {user && efficiencyIndex !== null 
+                ? `${efficiencyIndex.toFixed(1)}%` 
+                : "--%"}
             </span>
           </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   collection,
   query,
@@ -108,7 +108,7 @@ export default function App() {
 
     try {
       showToast("Initiating Inbox Analysis...");
-      
+
       const unread = await fetch(
         "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread newer_than:7d",
         {
@@ -198,13 +198,13 @@ export default function App() {
         consequences: triageResult.consequences || "Inbox-derived task detected.",
         stakes: triageResult.stakes || "Pending review.",
         draft: triageResult.draft || aiResult.action,
-        status: "proxy_ready",
+        status: "proxy_ready" as const,
         isCalendarEvent: triageResult.isCalendarEvent || false,
         calendarEvent: triageResult.calendarEvent || null,
         isShadowChronos: triageResult.isShadowChronos || false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        source: "gmail",
+        source: "gmail" as const,
         sourceMessageId: actionableEmails[0]?.gmailId,
       };
 
@@ -227,7 +227,7 @@ export default function App() {
       addSystemLog("System", `Inbox analysis identified ${actionableEmails.length} actionable items.`, "success");
       addSystemLog("Triage Agent", aiResult.summary, "action");
       addSystemLog("Proxy Agent", "External communication converted into structured task workflow.", "success");
-      
+
       console.log("AI RESULT:", aiResult);
       showToast(`Analyzed ${formattedEmails.length} recent communications.`);
 
@@ -243,7 +243,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const intent = params.get("intent");
-    
+
     if (intent) {
       setActiveTab('dashboard');
       setRawInput(intent);
@@ -251,6 +251,23 @@ export default function App() {
       addSystemLog("System", "External context payload successfully mapped to task input.", "warning");
     }
   }, [setRawInput, addSystemLog]);
+
+  // ---------------------------------------------------------
+  // EFFICIENCY INDEX CALCULATION
+  // ---------------------------------------------------------
+  const efficiencyIndex = useMemo(() => {
+    if (!user) return null;
+    if (!tasks || tasks.length === 0) return 100.0;
+
+    const completedTasks = tasks.filter(
+      (task) => task.status === "executed"
+    ).length;
+
+    const totalTasks = tasks.length;
+    const completionRatio = completedTasks / totalTasks;
+
+    return 75.0 + (completionRatio * 25.0);
+  }, [tasks, user]);
 
   return (
     <div className="h-screen w-full bg-brand-bg text-brand-text-primary flex flex-col font-public-sans antialiased text-[14px] overflow-hidden">
@@ -261,6 +278,7 @@ export default function App() {
         isLoading={loadingAuth}
         onLogin={login}
         onLogout={handleLogout}
+        efficiencyIndex={efficiencyIndex}
       />
 
       {/* 2. Main 3-Panel Segment */}
