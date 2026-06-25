@@ -16,49 +16,70 @@ export function AuditLogsView({
   onFilterChange: setLogFilter,
 }: AuditLogsViewProps) {
   return (
-<div className="bg-[#f4f1ea] border border-[#d8d2c4] p-4 rounded-[3px] flex flex-col gap-4">
-              <div className="flex items-center gap-2 border-b border-[#d8d2c4] pb-2">
-                <Terminal className="w-4 h-4 text-[#157f5b]" />
-                <h2 className="text-sm font-bold font-fraunces text-[#14171a]">Full Audit Telemetry Logs</h2>
-              </div>
-              <p className="text-[11px] text-[#5a6066] leading-relaxed">
-                Granular trace files generated from our multi-agent kernel. Use badges below to filter trace layers.
-              </p>
+    <div className="bg-brand-surface border border-brand-border p-6 rounded-[3px] flex flex-col gap-5 shadow-sm">
+      
+      {/* Header */}
+      <div className="flex items-center gap-3 border-b border-brand-border pb-3">
+        <Terminal className="w-5 h-5 text-brand-primary" />
+        <h2 className="text-[20px] font-medium font-fraunces text-brand-text-primary m-0">System Audit Ledger</h2>
+      </div>
+      
+      {/* Description */}
+      <p className="text-[14px] font-public-sans text-brand-text-secondary leading-relaxed m-0">
+        Comprehensive execution traces and routing decisions. Select a subsystem below to filter the ledger.
+      </p>
 
-              <div className="flex gap-1.5 flex-wrap">
-                {['all', 'Triage', 'Calibrator', 'Proxy', 'System'].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setLogFilter(type as any)}
-                    className={`text-[9px] font-space-mono px-2 py-0.5 border transition-all-custom rounded-[1.5px] cursor-pointer ${
-                      logFilter === type 
-                      ? 'bg-[#157f5b] text-[#fbfaf5] border-transparent font-bold' 
-                      : 'bg-transparent text-[#5a6066] border-[#d8d2c4] hover:bg-[#fbfaf5]'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
+      {/* Filter Badges */}
+      <div className="flex gap-2 flex-wrap">
+        {['all', 'Triage', 'Calibrator', 'Proxy', 'System'].map((type) => (
+          <button
+            key={type}
+            onClick={() => setLogFilter(type as any)}
+            className={`text-[11px] font-space-mono px-3 py-1.5 border transition-all-custom rounded-[2px] cursor-pointer uppercase tracking-wider ${
+              logFilter === type 
+              ? 'bg-brand-primary text-brand-surface border-brand-primary font-bold shadow-sm' 
+              : 'bg-brand-bg text-brand-text-secondary border-brand-border hover:border-brand-text-secondary hover:text-brand-text-primary'
+            }`}
+          >
+            {type === 'all' ? 'All Systems' : type}
+          </button>
+        ))}
+      </div>
 
-              <div className="bg-neutral-900 border border-neutral-800 text-neutral-300 font-space-mono text-[11px] p-3 rounded-[2.5px] h-[300px] overflow-y-auto flex flex-col gap-1.5 scrollbar-thin">
-                {filteredLogs.map((log) => (
-                  <div key={log.id} className="flex gap-2 items-start leading-relaxed text-left">
-                    <span className="text-neutral-500 font-light select-none">[{log.timestamp}]</span>
-                    <span className={`font-bold select-none whitespace-nowrap px-1 uppercase text-[9px] ${
-                      log.message.includes("SHADOW CHRONOS GATEWAY DEPLOYED") ? 'text-[#dc2626] bg-red-500/10' :
-                      log.agentName === 'Triage Agent' ? 'text-amber-400 bg-amber-400/10' :
-                      log.agentName === 'Calibrator Agent' ? 'text-cyan-400 bg-cyan-400/10' :
-                      log.agentName === 'Proxy Agent' ? 'text-emerald-400 bg-emerald-400/10' :
-                      'text-slate-400 bg-slate-400/10'
-                    }`}>
-                      {log.message.includes("SHADOW CHRONOS GATEWAY DEPLOYED") ? "System" : log.agentName.split(' ')[0]}
-                    </span>
-                    <span className={`flex-1 break-all select-all font-light ${log.message.includes("SHADOW CHRONOS GATEWAY DEPLOYED") ? "text-[#dc2626] font-bold" : ""}`}>{log.message}</span>
-                  </div>
-                ))}
-              </div>
+      {/* Light Theme Ledger Window */}
+      <div className="bg-brand-bg border border-brand-border text-brand-text-primary font-space-mono text-[12px] p-4 rounded-[3px] h-[350px] overflow-y-auto flex flex-col gap-2 scrollbar-thin shadow-inner">
+        {filteredLogs.map((log) => {
+          // Check for critical system events (using both old and new terminology to be safe)
+          const isCritical = log.message.includes("SHADOW CHRONOS") || log.message.includes("Resolution Deployed");
+
+          return (
+            <div key={log.id} className="flex gap-3 items-start leading-relaxed text-left border-b border-brand-border/40 pb-2 last:border-0 last:pb-0">
+              
+              {/* Timestamp */}
+              <span className="text-brand-text-secondary/70 font-medium select-none shrink-0 mt-0.5">
+                [{log.timestamp}]
+              </span>
+              
+              {/* Agent Badge - Colored based on your brand palette */}
+              <span className={`font-bold select-none whitespace-nowrap px-1.5 py-0.5 rounded-[2px] uppercase text-[10px] tracking-wider mt-0.5 shrink-0 ${
+                isCritical ? 'text-red-700 bg-red-100 border border-red-200' :
+                log.agentName === 'Triage Agent' ? 'text-[#9a5b00] bg-[#f8ecd6] border border-[#f8ecd6]' : // accent-badge
+                log.agentName === 'Calibrator Agent' ? 'text-brand-primary bg-brand-primary/10 border border-brand-primary/20' :
+                log.agentName === 'Proxy Agent' ? 'text-brand-text-primary bg-brand-surface border border-brand-border' :
+                'text-brand-text-secondary bg-brand-surface border border-brand-border'
+              }`}>
+                {isCritical ? "System" : log.agentName.split(' ')[0]}
+              </span>
+              
+              {/* Log Message */}
+              <span className={`flex-1 break-words select-all font-medium ${isCritical ? "text-red-700" : "text-brand-text-primary"}`}>
+                {log.message}
+              </span>
+              
             </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
-
