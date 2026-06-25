@@ -32,6 +32,21 @@ export interface FirestoreErrorInfo {
   };
 }
 
+// THE FIX: This recursively strips out any 'undefined' values before they hit Firebase
+const sanitizeForFirestore = (obj: any): any => {
+  if (obj === undefined) return null;
+  if (obj === null || typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
+
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = sanitizeForFirestore(value);
+    }
+  }
+  return cleaned;
+};
+
 export function subscribeToUserTasks(
   userId: string,
   onTasks: (tasks: Task[]) => void,
@@ -48,13 +63,12 @@ export function subscribeToUserTasks(
   }, onError);
 }
 
-
 export function createTaskDocument(data: Omit<Task, 'id'>) {
-  return addDoc(collection(db, "tasks"), data);
+  return addDoc(collection(db, "tasks"), sanitizeForFirestore(data));
 }
 
 export function updateTaskDocument(taskId: string, data: Partial<Task>) {
-  return updateDoc(doc(db, "tasks", taskId), data);
+  return updateDoc(doc(db, "tasks", taskId), sanitizeForFirestore(data));
 }
 
 export function deleteTaskDocument(taskId: string) {
