@@ -4,12 +4,17 @@ export interface ParsedEmailDraft {
   body: string;
 }
 
+/**
+ * Parses an AI-generated raw text draft into structured email components.
+ * Safely extracts TO, SUBJECT, and BODY fields using regex pattern matching.
+ */
 export function parseEmailDraft(draft: string): ParsedEmailDraft {
   if (!draft) return { to: "", subject: "", body: "" };
 
   const toMatch = draft.match(/^TO:\s*([^\n]+)/mi);
   const subjectMatch = draft.match(/^SUBJECT:\s*([^\n]+)/mi);
   const bodyIndex = draft.toUpperCase().indexOf("BODY:");
+  
   const body = bodyIndex !== -1
     ? draft.substring(bodyIndex + 5).trim()
     : draft
@@ -18,12 +23,16 @@ export function parseEmailDraft(draft: string): ParsedEmailDraft {
         .trim();
 
   return {
-    to: toMatch?.[1].trim() ?? "sahilsingh107433@gmail.com",
-    subject: subjectMatch?.[1].trim() ?? "Agent Zero Proxy Dispatch",
+    to: toMatch?.[1].trim() ?? "operator@internal.system",
+    subject: subjectMatch?.[1].trim() ?? "Automated System Dispatch",
     body,
   };
 }
 
+/**
+ * Encodes email content into a base64url string strictly compliant with the Gmail API.
+ * Safely handles UTF-8 character encoding to prevent malformed text in transit.
+ */
 export function createRawEmail(
   to: string,
   from: string,
