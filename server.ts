@@ -569,7 +569,7 @@ const startServer = async () => {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[SmartFlow System Gateway] Booted successfully. Listening on http://0.0.0.0:${PORT}`);
+    console.log(`[AGENT ZERO] Booted successfully. Listening on http://0.0.0.0:${PORT}`);
   });
 };
 
