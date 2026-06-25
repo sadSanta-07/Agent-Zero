@@ -4,7 +4,7 @@ import type { Task } from "../types";
 import { parseEmailDraft } from "../services/email";
 
 interface TaskCardProps {
-  task: Task;
+  task: Task & { prepDocUrl?: string };
   handleDeleteTask: (id: string) => void;
   handleExecuteProxy: (task: Task) => Promise<void>;
   taskScopeWarnings?: Record<string, string>;
@@ -34,12 +34,12 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
       )}
 
       {/* Flash Warning Banner - Softened for enterprise feel */}
-      <div className="bg-red-50 border border-red-200 text-red-800 text-[11px] font-space-mono font-medium p-2.5 rounded-[2px] flex items-center justify-between">
+      <div className="bg-red-50 border border-red-200 text-red-800 text-[11px] font-space-mono font-medium p-2.5 rounded-xs flex items-center justify-between">
         <span className="flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
           <span className="uppercase tracking-wider">Schedule Conflict Detected // Automated Resolution Active</span>
         </span>
-        <span className="bg-red-700 text-white px-2 py-0.5 text-[10px] rounded-[2px] animate-pulse font-bold tracking-wider uppercase">
+        <span className="bg-red-700 text-white px-2 py-0.5 text-[10px] rounded-xs animate-pulse font-bold tracking-wider uppercase">
           Urgent
         </span>
       </div>
@@ -51,10 +51,10 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
             {task.title}
           </h4>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[10px] font-space-mono uppercase font-medium bg-red-100 text-red-800 px-2 py-1 rounded-[2px] tracking-wider">
+            <span className="text-[10px] font-space-mono uppercase font-medium bg-red-100 text-red-800 px-2 py-1 rounded-xs tracking-wider">
               High-Priority Mitigation
             </span>
-            <span className="text-[10px] font-space-mono uppercase font-medium bg-[#f8ecd6] text-[#9a5b00] px-2 py-1 rounded-[2px] tracking-wider">
+            <span className="text-[10px] font-space-mono uppercase font-medium bg-[#f8ecd6] text-[#9a5b00] px-2 py-1 rounded-xs tracking-wider">
               {task.stakes}
             </span>
           </div>
@@ -66,7 +66,7 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
           </div>
           <button
             onClick={() => handleDeleteTask(task.id)}
-            className="text-brand-text-secondary hover:text-red-700 p-1 rounded-[2px] transition-all-custom cursor-pointer"
+            className="text-brand-text-secondary hover:text-red-700 p-1 rounded-xs transition-all-custom cursor-pointer"
             title="Remove Task"
           >
             <Trash2 className="w-4 h-4" />
@@ -75,7 +75,7 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
       </div>
 
       {/* Consequences Block -> Rebranded as "Projected Impact" */}
-      <div className="p-3 bg-brand-bg border border-brand-border rounded-[2px] text-[14px]">
+      <div className="p-3 bg-brand-bg border border-brand-border rounded-xs text-[14px]">
         <p className="text-brand-text-secondary leading-relaxed font-public-sans">
           <span className="font-space-mono text-[11px] font-bold uppercase text-brand-text-primary mr-2 tracking-wider">Projected Impact:</span>
           {task.consequences}
@@ -98,11 +98,11 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
           {(() => {
             const { to, subject, body } = parseEmailDraft(task.draft);
             return (
-              <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-[2px] text-brand-text-primary flex-1">
+              <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1">
                 <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to}</div>
                 <div><strong className="text-brand-text-secondary font-medium">Subject:</strong> {subject}</div>
                 <div className="border-t border-brand-border pt-2 mt-2 font-space-mono">
-                  <span className="whitespace-pre-wrap break-words leading-relaxed text-[12px] text-brand-text-primary block max-h-24 overflow-y-auto">{body}</span>
+                  <span className="whitespace-pre-wrap wrap-break-word leading-relaxed text-[12px] text-brand-text-primary block max-h-24 overflow-y-auto">{body}</span>
                 </div>
               </div>
             );
@@ -120,7 +120,7 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
             </span>
           </div>
           {task.calendarEvent && (
-            <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-[2px] text-brand-text-primary flex-1">
+            <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1">
               <div><strong className="text-brand-text-secondary font-medium">Event:</strong> {task.calendarEvent.title}</div>
               <div><strong className="text-brand-text-secondary font-medium">Date:</strong> {task.calendarEvent.startTime ? new Date(task.calendarEvent.startTime).toLocaleDateString() : 'N/A'}</div>
               <div><strong className="text-brand-text-secondary font-medium">Time:</strong> {task.calendarEvent.startTime ? new Date(task.calendarEvent.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} - {task.calendarEvent.endTime ? new Date(task.calendarEvent.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</div>
@@ -138,14 +138,14 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
         {task.status !== 'executed' ? (
           <button
             onClick={async () => handleExecuteProxy(task)}
-            className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-3 px-4 rounded-[2px] transition-all-custom flex items-center justify-center gap-2 font-public-sans cursor-pointer shadow-sm"
+            className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-3 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-public-sans cursor-pointer shadow-sm"
           >
             <AlertTriangle className="w-4 h-4 text-brand-surface" />
             <span>Confirm Automated Resolution</span>
           </button>
         ) : (
           <div className="flex flex-col gap-3">
-            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2.5 flex items-center justify-center gap-2 text-brand-primary font-space-mono text-[12px] font-medium rounded-[2px] uppercase">
+            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2.5 flex items-center justify-center gap-2 text-brand-primary font-space-mono text-[12px] font-medium rounded-xs uppercase">
               <CheckCircle className="w-4 h-4 text-brand-primary shrink-0" />
               <span className="tracking-wider">Resolution Deployed // Multi-Channel Synchronized</span>
             </div>
@@ -155,7 +155,7 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
                 href={task.prepDocUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-brand-bg text-brand-primary hover:bg-brand-surface border border-brand-border hover:border-brand-primary text-[12px] font-medium py-2.5 px-4 rounded-[2px] transition-all-custom flex items-center justify-center gap-2 font-space-mono uppercase"
+                className="w-full bg-brand-bg text-brand-primary hover:bg-brand-surface border border-brand-border hover:border-brand-primary text-[12px] font-medium py-2.5 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-space-mono uppercase"
               >
                 <Play className="w-4 h-4" />
                 Access Preparation Brief
@@ -200,10 +200,10 @@ export const CalendarCard: React.FC<TaskCardProps> = ({
             {task.title}
           </h4>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[10px] font-space-mono uppercase font-medium bg-[#f8ecd6] text-[#9a5b00] px-2 py-1 rounded-[2px] tracking-wider">
+            <span className="text-[10px] font-space-mono uppercase font-medium bg-[#f8ecd6] text-[#9a5b00] px-2 py-1 rounded-xs tracking-wider">
               {task.stakes}
             </span>
-            <span className="text-[10px] font-space-mono uppercase font-medium bg-brand-bg text-brand-text-secondary px-2 py-1 rounded-[2px] border border-brand-border tracking-wider">
+            <span className="text-[10px] font-space-mono uppercase font-medium bg-brand-bg text-brand-text-secondary px-2 py-1 rounded-xs border border-brand-border tracking-wider">
               Calendar Automation
             </span>
           </div>
@@ -216,7 +216,7 @@ export const CalendarCard: React.FC<TaskCardProps> = ({
           </div>
           <button
             onClick={() => handleDeleteTask(task.id)}
-            className="text-brand-text-secondary hover:text-red-700 p-1 rounded-[2px] transition-all-custom cursor-pointer"
+            className="text-brand-text-secondary hover:text-red-700 p-1 rounded-xs transition-all-custom cursor-pointer"
             title="Remove Task"
           >
             <Trash2 className="w-4 h-4" />
@@ -225,7 +225,7 @@ export const CalendarCard: React.FC<TaskCardProps> = ({
       </div>
 
       {/* Consequences Block */}
-      <div className="p-3 bg-brand-bg border border-brand-border rounded-[2px] text-[14px]">
+      <div className="p-3 bg-brand-bg border border-brand-border rounded-xs text-[14px]">
         <p className="text-brand-text-secondary leading-relaxed font-public-sans">
           <span className="font-space-mono text-[11px] font-bold uppercase text-brand-text-primary mr-2 tracking-wider">Projected Impact:</span>
           {task.consequences}
@@ -234,7 +234,7 @@ export const CalendarCard: React.FC<TaskCardProps> = ({
 
       {/* OAuth Section Scope Warnings */}
       {taskScopeWarnings[task.id] && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-[12px] font-public-sans font-medium p-3 rounded-[2px] flex items-center gap-2">
+        <div className="bg-red-50 border border-red-200 text-red-700 text-[12px] font-public-sans font-medium p-3 rounded-xs flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{taskScopeWarnings[task.id]}</span>
         </div>
@@ -252,7 +252,7 @@ export const CalendarCard: React.FC<TaskCardProps> = ({
             </span>
           </div>
 
-          <div className="text-[12px] font-space-mono space-y-2 bg-brand-surface p-3 border border-brand-border rounded-[2px] text-brand-text-primary">
+          <div className="text-[12px] font-space-mono space-y-2 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary">
             <div><strong className="text-brand-text-secondary font-medium">Title:</strong> {task.calendarEvent.title}</div>
             <div><strong className="text-brand-text-secondary font-medium">Date:</strong> {task.calendarEvent.startTime ? new Date(task.calendarEvent.startTime).toLocaleDateString() : 'N/A'}</div>
             <div><strong className="text-brand-text-secondary font-medium">Time:</strong> {task.calendarEvent.startTime ? new Date(task.calendarEvent.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} - {task.calendarEvent.endTime ? new Date(task.calendarEvent.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</div>
@@ -264,7 +264,7 @@ export const CalendarCard: React.FC<TaskCardProps> = ({
           {task.status !== 'executed' ? (
             <button
               onClick={async () => handleExecuteProxy(task)}
-              className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-2.5 px-4 rounded-[2px] transition-all-custom flex items-center justify-center gap-2 font-public-sans cursor-pointer mt-1"
+              className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-2.5 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-public-sans cursor-pointer mt-1"
             >
               <Play className="w-4 h-4 fill-brand-surface" />
               <span>Synchronize Event</span>
@@ -273,27 +273,27 @@ export const CalendarCard: React.FC<TaskCardProps> = ({
             <div className="flex flex-col gap-3 mt-1">
 
               {task.isCalendarSynced ? (
-                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
                   <CheckCircle className="w-4 h-4 shrink-0" />
                   <span className="tracking-wider">Verified: Synced to Google Calendar</span>
                 </div>
               ) : task.isNativeGmailApi ? (
-                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
                   <CheckCircle className="w-4 h-4 shrink-0" />
                   <span className="tracking-wider">Verified: Dispatched via Google API</span>
                 </div>
               ) : task.isWorkspaceSynced ? (
-                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
                   <CheckCircle className="w-4 h-4 shrink-0" />
                   <span className="tracking-wider">Verified: Dispatched via Workspace API</span>
                 </div>
               ) : task.isAgentMatrixGateway ? (
-                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
                   <CheckCircle className="w-4 h-4 shrink-0" />
                   <span className="tracking-wider">Verified: Dispatched via Core Gateway</span>
                 </div>
               ) : (
-                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+                <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
                   <CheckCircle className="w-4 h-4 shrink-0" />
                   <span className="tracking-wider">Verified: Local Timeline Populated</span>
                 </div>
@@ -304,7 +304,7 @@ export const CalendarCard: React.FC<TaskCardProps> = ({
                   href={task.prepDocUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-brand-bg text-brand-primary hover:bg-brand-surface border border-brand-border hover:border-brand-primary text-[12px] font-medium py-2.5 px-4 rounded-[2px] transition-all-custom flex items-center justify-center gap-2 font-space-mono uppercase"
+                  className="w-full bg-brand-bg text-brand-primary hover:bg-brand-surface border border-brand-border hover:border-brand-primary text-[12px] font-medium py-2.5 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-space-mono uppercase"
                 >
                   <Play className="w-4 h-4" />
                   Access Preparation Brief
@@ -367,7 +367,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({
             {task.title}
           </h4>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[10px] font-space-mono uppercase font-medium bg-[#f8ecd6] text-[#9a5b00] px-2 py-1 rounded-[2px] tracking-wider">
+            <span className="text-[10px] font-space-mono uppercase font-medium bg-[#f8ecd6] text-[#9a5b00] px-2 py-1 rounded-xs tracking-wider">
               {task.stakes}
             </span>
           </div>
@@ -380,7 +380,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({
           </div>
           <button
             onClick={() => handleDeleteTask(task.id)}
-            className="text-brand-text-secondary hover:text-red-700 p-1 rounded-[2px] transition-all-custom cursor-pointer"
+            className="text-brand-text-secondary hover:text-red-700 p-1 rounded-xs transition-all-custom cursor-pointer"
             title="Remove Task"
           >
             <Trash2 className="w-4 h-4" />
@@ -389,7 +389,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({
       </div>
 
       {/* Consequences Block */}
-      <div className="p-3 bg-brand-bg border border-brand-border rounded-[2px] text-[14px]">
+      <div className="p-3 bg-brand-bg border border-brand-border rounded-xs text-[14px]">
         <p className="text-brand-text-secondary leading-relaxed font-public-sans">
           <span className="font-space-mono text-[11px] font-bold uppercase text-brand-text-primary mr-2 tracking-wider">Projected Impact:</span>
           {task.consequences}
@@ -398,7 +398,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({
 
       {/* OAuth Section Scope Warnings */}
       {taskScopeWarnings[task.id] && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-[12px] font-public-sans font-medium p-3 rounded-[2px] flex items-center gap-2">
+        <div className="bg-red-50 border border-red-200 text-red-700 text-[12px] font-public-sans font-medium p-3 rounded-xs flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{taskScopeWarnings[task.id]}</span>
         </div>
@@ -416,15 +416,14 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({
             </span>
           </div>
 
-          {/* Structured TO, SUBJECT and BODY fields */}
           {(() => {
             const { to, subject, body } = parseEmailDraft(task.draft);
             return (
-              <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-[2px] text-brand-text-primary">
+              <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary">
                 <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to}</div>
                 <div><strong className="text-brand-text-secondary font-medium">Subject:</strong> {subject}</div>
                 <div className="border-t border-brand-border pt-2 mt-2 font-space-mono">
-                  <span className="whitespace-pre-wrap break-words leading-relaxed text-[12px] text-brand-text-primary block max-h-32 overflow-y-auto">{body}</span>
+                  <span className="whitespace-pre-wrap wrap-break-word leading-relaxed text-[12px] text-brand-text-primary block max-h-32 overflow-y-auto">{body}</span>
                 </div>
               </div>
             );
@@ -433,28 +432,28 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({
           {task.status !== 'executed' ? (
             <button
               onClick={async () => handleExecuteProxy(task)}
-              className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-2.5 px-4 rounded-[2px] transition-all-custom flex items-center justify-center gap-2 font-public-sans cursor-pointer mt-1"
+              className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-2.5 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-public-sans cursor-pointer mt-1"
             >
               <Play className="w-4 h-4 fill-brand-surface" />
               <span>Dispatch Communication</span>
             </button>
           ) : task.isNativeGmailApi ? (
-            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 mt-1 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 mt-1 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
               <CheckCircle className="w-4 h-4 shrink-0" />
               <span className="tracking-wider">Verified: Dispatched via Native API</span>
             </div>
           ) : task.isWorkspaceSynced ? (
-            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 mt-1 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 mt-1 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
               <CheckCircle className="w-4 h-4 shrink-0" />
               <span className="tracking-wider">Verified: Dispatched via Workspace API</span>
             </div>
           ) : task.isAgentMatrixGateway ? (
-            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 mt-1 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 mt-1 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
               <CheckCircle className="w-4 h-4 shrink-0" />
               <span className="tracking-wider">Verified: Dispatched via Core Gateway</span>
             </div>
           ) : (
-            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 mt-1 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-[2px] uppercase">
+            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2 mt-1 flex items-center gap-2 text-brand-primary font-space-mono text-[11px] font-medium rounded-xs uppercase">
               <CheckCircle className="w-4 h-4 shrink-0" />
               <span className="tracking-wider">Verified: Local Logging Complete</span>
             </div>
