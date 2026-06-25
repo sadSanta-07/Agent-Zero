@@ -199,19 +199,26 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
             const { to, subject, body } = parseEmailDraft(task.draft);
             return (
               <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary">
-                <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to}</div>
+                <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to || "Extracted securely at runtime"}</div>
                 <div><strong className="text-brand-text-secondary font-medium">Subject:</strong> {subject}</div>
                 <div className="border-t border-brand-border pt-2 mt-2 font-space-mono">
-                  <span className="whitespace-pre-wrap wrap-break-word leading-relaxed text-[12px] text-brand-text-primary block max-h-32 overflow-y-auto">{body}</span>
+                  <span className="whitespace-pre-wrap wrap-break-word leading-relaxed text-[12px] text-brand-text-primary block max-h-32 overflow-y-auto">{body || task.draft}</span>
                 </div>
               </div>
             );
           })()}
-          {task.status !== 'executed' && (
+          
+          {/* THE FIX: Added the Executed UI State here! */}
+          {task.status !== 'executed' ? (
             <button onClick={async () => handleExecuteProxy(task)} className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-2.5 px-4 rounded-xs flex items-center justify-center gap-2 cursor-pointer mt-1">
               <Play className="w-4 h-4 fill-brand-surface" />
               <span>Dispatch Communication</span>
             </button>
+          ) : (
+            <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2.5 flex items-center justify-center gap-2 text-brand-primary font-space-mono text-[12px] font-medium rounded-xs uppercase mt-1">
+              <CheckCircle className="w-4 h-4 text-brand-primary shrink-0" />
+              <span className="tracking-wider">Communication Dispatched</span>
+            </div>
           )}
         </div>
       )}
