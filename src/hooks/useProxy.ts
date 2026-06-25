@@ -54,7 +54,7 @@ export function useProxy({
     setTaskScopeWarnings((prev) => ({ ...prev, [taskId]: message }));
   };
 
-  const resolveContactEmail = (rawTo: string, fullDraft?: string) => {
+  const resolveContactEmail = (rawTo: string, fullDraft?: string, title?: string) => {
     let cleanName = (rawTo || "").replace(/[[\]'"]/g, '').trim();
 
     if (!cleanName && fullDraft) {
@@ -62,37 +62,32 @@ export function useProxy({
       if (emailRegexMatch) cleanName = emailRegexMatch[0];
     }
 
-    if (!cleanName) return "placeholder@example.com";
-
-    if (cleanName.includes('@')) return cleanName;
+    const isGeneric = cleanName === 'team@company.com' || cleanName === 'placeholder@example.com';
 
     try {
+      const searchTerms = [cleanName.toLowerCase(), ...(title || "").toLowerCase().split(/\s+/)];
       for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key) {
-          const val = localStorage.getItem(key);
-          if (val && val.includes('resolvedValue')) {
-            const parsed = JSON.parse(val);
-            if (Array.isArray(parsed)) {
-              const match = parsed.find(item =>
-                item?.shortcode?.toLowerCase() === cleanName.toLowerCase() ||
-                item?.key?.toLowerCase() === cleanName.toLowerCase()
-              );
-              if (match && match.resolvedValue && match.resolvedValue.includes('@')) {
-                return match.resolvedValue;
-              }
+        const val = localStorage.getItem(localStorage.key(i) || "");
+        if (val && val.includes('resolvedValue')) {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed)) {
+            const match = parsed.find(item =>
+              searchTerms.includes((item?.shortcode || "").toLowerCase()) ||
+              searchTerms.includes((item?.key || "").toLowerCase())
+            );
+            if (match && match.resolvedValue && match.resolvedValue.includes('@')) {
+              return match.resolvedValue;
             }
           }
         }
       }
-    } catch (e) {
-      console.warn("Memory matrix lookup bypassed.");
-    }
+    } catch (e) { }
+
+    if (cleanName.includes('@') && !isGeneric) return cleanName;
 
     return "placeholder@example.com";
   };
 
-  // 7. Action: Immediate 1-Click Execution Dispatcher
   const handleExecuteProxy = async (task: Task) => {
     setIsDispatching(true);
     addSystemLog('Proxy Agent', `Executing authorized dispatch for target: "${task.title}"`, 'action');
@@ -117,7 +112,7 @@ export function useProxy({
 
             const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: `Automated Update: ${task.title}`, body: "Automated mitigation deployed." };
 
-            const safeRecipient = resolveContactEmail(parsedEmail.to);
+            const safeRecipient = resolveContactEmail(parsedEmail.to, task.draft, task.title); 
             const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
             const gmailPromise = fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
@@ -240,7 +235,7 @@ export function useProxy({
             addSystemLog('Proxy Agent', `Initiating Workspace Gmail API dispatch...`, 'action');
             const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: task.title, body: "Automated task execution." };
 
-            const safeRecipient = resolveContactEmail(parsedEmail.to);
+            const safeRecipient = resolveContactEmail(parsedEmail.to, task.draft, task.title);
             const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
             response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {

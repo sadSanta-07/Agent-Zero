@@ -3,6 +3,37 @@ import { AlertTriangle, CheckCircle, Play, Trash2, Mail, Calendar } from "lucide
 import type { Task } from "../types";
 import { parseEmailDraft } from "../services/email";
 
+const robustEmailParser = (rawText?: string, title?: string) => {
+  if (!rawText) return { to: "Extracted at runtime", subject: "Automated Dispatch", body: "" };
+
+  const toMatch = rawText.match(/TO:\s*(.*?)(?=SUBJECT:|$)/i);
+  const subMatch = rawText.match(/SUBJECT:\s*(.*?)(?=BODY:|$)/i);
+  const bodyMatch = rawText.match(/BODY:\s*([\s\S]*)/i);
+
+  let to = toMatch ? toMatch[1].trim() : "Extracted at runtime";
+  let subject = subMatch ? subMatch[1].trim() : "Automated Update";
+  let body = bodyMatch ? bodyMatch[1].trim() : rawText;
+
+  if (to === 'team@company.com' || to === 'placeholder@example.com' || !to.includes('@')) {
+    try {
+      const words = (title || "").toLowerCase().split(/\s+/);
+      for (let i = 0; i < localStorage.length; i++) {
+        const val = localStorage.getItem(localStorage.key(i) || "");
+        if (val && val.includes('resolvedValue')) {
+          const parsed = JSON.parse(val);
+          const match = parsed.find((item: any) => 
+            words.includes((item?.shortcode || "").toLowerCase()) || 
+            words.includes((item?.key || "").toLowerCase())
+          );
+          if (match && match.resolvedValue) to = match.resolvedValue;
+        }
+      }
+    } catch(e) {}
+  }
+
+  return { to, subject, body };
+};
+
 interface TaskCardProps {
   task: Task & { prepDocUrl?: string };
   handleDeleteTask: (id: string) => void;
@@ -89,7 +120,7 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
               </span>
             </div>
             {(() => {
-              const { to, subject, body } = parseEmailDraft(task.draft);
+              const { to, subject, body } = robustEmailParser(task.draft, task.title);
               return (
                 <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1">
                   <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to}</div>
@@ -196,7 +227,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
       {task.draft && (
         <div className="border border-brand-border bg-brand-bg p-4 rounded-[3px] flex flex-col gap-3">
           {(() => {
-            const { to, subject, body } = parseEmailDraft(task.draft);
+            const { to, subject, body } = robustEmailParser(task.draft, task.title);
             return (
               <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary">
                 <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to || "Extracted securely at runtime"}</div>
@@ -208,7 +239,6 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
             );
           })()}
           
-          {/* THE FIX: Added the Executed UI State here! */}
           {task.status !== 'executed' ? (
             <button onClick={async () => handleExecuteProxy(task)} className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-2.5 px-4 rounded-xs flex items-center justify-center gap-2 cursor-pointer mt-1">
               <Play className="w-4 h-4 fill-brand-surface" />
