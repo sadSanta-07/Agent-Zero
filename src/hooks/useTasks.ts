@@ -106,3 +106,17 @@ export function useTasks({ user, loadingAuth, addSystemLog, showToast }: UseTask
 
   return { tasks, setTasks, deleteTask, resetTasks, handleFirestoreError };
 }
+
+const sanitizeForFirestore = (obj: any): any => {
+  if (obj === undefined) return null;
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
+  
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = sanitizeForFirestore(value);
+    }
+  }
+  return cleaned;
+};
