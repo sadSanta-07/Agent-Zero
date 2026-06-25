@@ -9,6 +9,19 @@ import { google } from "googleapis";
 dotenv.config();
 
 const app = express();
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://agentzero-18082.web.app");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+
+  // Intercept preflight OPTIONS request
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 const PORT = 3000;
 
 app.use(express.json({ limit: "50mb" }));
