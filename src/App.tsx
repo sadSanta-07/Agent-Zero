@@ -5,6 +5,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
+import { db } from "./firebase"
 import { Sidebar } from "./components/Sidebar";
 import { TelemetryPanel } from "./components/TelemetryPanel";
 import { AppHeader } from "./components/AppHeader";
@@ -100,15 +101,14 @@ export default function App() {
   const handleScanInbox = async () => {
     console.log("INBOX SCAN STARTED");
 
-    if (!googleAccessToken) {
-      showToast("Please sign in first");
+    if (!googleAccessToken || !user) {
+      showToast("Authentication required to scan inbox.");
       return;
     }
-    if (!user) {
-      showToast("Please sign in first");
-      return;
-    }
+
     try {
+      showToast("Initiating Inbox Analysis...");
+      
       const unread = await fetch(
         "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread newer_than:7d",
         {
@@ -119,7 +119,6 @@ export default function App() {
       );
 
       const data = await unread.json();
-
       const messages = data.messages?.slice(0, 10) || [];
 
       const emails = await Promise.all(
@@ -143,13 +142,8 @@ export default function App() {
         })
       );
 
-      const getHeader = (
-        headers: any[],
-        name: string
-      ) =>
-        headers.find(
-          (h) => h.name.toLowerCase() === name.toLowerCase()
-        )?.value || "";
+      const getHeader = (headers: any[], name: string) =>
+        headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || "";
 
       const formattedEmails = emails.map((email) => ({
         gmailId: email.id,
@@ -157,98 +151,57 @@ export default function App() {
         from: getHeader(email.headers, "From"),
         snippet: email.snippet,
       }));
-      const actionableEmails = formattedEmails.filter(
-        (email) =>
-          /deadline|tomorrow|urgent|submit|meeting|interview|payment|due|assignment/i.test(
-            `${email.subject} ${email.snippet}`
-          )
+
+      const actionableEmails = formattedEmails.filter((email) =>
+        /deadline|tomorrow|urgent|submit|meeting|interview|payment|due|assignment/i.test(
+          `${email.subject} ${email.snippet}`
+        )
       );
 
       console.log("ACTIONABLE EMAILS:", actionableEmails);
-
       console.log("FORMATTED EMAILS:", formattedEmails);
 
-      const aiResponse = await fetch(
-        "/api/agents/inbox-scan",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            emails: actionableEmails,
-          }),
-        }
-      );
+      const aiResponse = await fetch("/api/agents/inbox-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emails: actionableEmails }),
+      });
 
       const aiResult = await aiResponse.json();
       const inboxRawText = actionableEmails.map(email => `
         Subject: ${email.subject}
         Snippet: ${email.snippet}
-        `).join("\n");
+      `).join("\n");
 
       console.log("TRIAGE INPUT:", inboxRawText);
 
-      const triageResponse = await fetch(
-        "/api/agents/triage",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            rawText: inboxRawText,
-            memoryMatrix,
-            isThreat: false,
-          }),
-        }
-      );
+      const triageResponse = await fetch("/api/agents/triage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rawText: inboxRawText,
+          memoryMatrix,
+          isThreat: false,
+        }),
+      });
 
       const triageResult = await triageResponse.json();
 
       const inboxTask = {
         userId: user?.uid,
         rawText: inboxRawText,
-        title:
-          triageResult.title ||
-          actionableEmails[0]?.subject ||
-          "Inbox Alert",
-
-        intent_type:
-          triageResult.intent_type || "EMAIL",
-
-        deadline:
-          triageResult.deadline || null,
-
-        entities:
-          triageResult.entities || [],
-
-        urgency:
-          triageResult.urgency || 8.5,
-
-        consequences:
-          triageResult.consequences ||
-          "Inbox-derived task detected.",
-
-        stakes:
-          triageResult.stakes ||
-          "Pending review.",
-
-        draft:
-          triageResult.draft ||
-          aiResult.action,
-
+        title: triageResult.title || actionableEmails[0]?.subject || "Inbox Action Item",
+        intent_type: triageResult.intent_type || "EMAIL",
+        deadline: triageResult.deadline || null,
+        entities: triageResult.entities || [],
+        urgency: triageResult.urgency || 8.5,
+        consequences: triageResult.consequences || "Inbox-derived task detected.",
+        stakes: triageResult.stakes || "Pending review.",
+        draft: triageResult.draft || aiResult.action,
         status: "proxy_ready",
-
-        isCalendarEvent:
-          triageResult.isCalendarEvent || false,
-
-        calendarEvent:
-          triageResult.calendarEvent || null,
-
-        isShadowChronos:
-          triageResult.isShadowChronos || false,
-
+        isCalendarEvent: triageResult.isCalendarEvent || false,
+        calendarEvent: triageResult.calendarEvent || null,
+        isShadowChronos: triageResult.isShadowChronos || false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         source: "gmail",
@@ -263,7 +216,7 @@ export default function App() {
       );
 
       if (!existingTasks.empty) {
-        showToast("Already processed");
+        showToast("Task already processed from this thread.");
         return;
       }
 
@@ -271,30 +224,16 @@ export default function App() {
 
       console.log("TRIAGE RESULT:", triageResult);
 
-      addSystemLog(
-        "System",
-        `Inbox scanner found ${actionableEmails.length} actionable emails.`,
-        "success"
-      );
-      addSystemLog(
-        "Triage Agent",
-        aiResult.summary,
-        "action"
-      );
-      addSystemLog(
-        "Proxy Agent",
-        "Inbox threat converted into actionable task.",
-        "success"
-      );
+      addSystemLog("System", `Inbox analysis identified ${actionableEmails.length} actionable items.`, "success");
+      addSystemLog("Triage Agent", aiResult.summary, "action");
+      addSystemLog("Proxy Agent", "External communication converted into structured task workflow.", "success");
+      
       console.log("AI RESULT:", aiResult);
-
-      showToast(
-        `Loaded ${formattedEmails.length} emails`
-      );
+      showToast(`Analyzed ${formattedEmails.length} recent communications.`);
 
     } catch (err) {
       console.error(err);
-      showToast("Inbox scan failed");
+      showToast("Inbox analysis failed. Please verify connection.");
     }
   };
 
@@ -306,22 +245,15 @@ export default function App() {
     const intent = params.get("intent");
     
     if (intent) {
-      // 1. Switch to the dashboard view automatically
       setActiveTab('dashboard');
-      
-      // 2. Inject the highlighted text straight into the Agent Zero brain
       setRawInput(intent);
-      
-      // 3. Silently clean the URL bar so it looks like magic and doesn't loop on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // 4. Fire a telemetry log so the judges see the system acknowledging the external payload
-      addSystemLog("System", "EXTERNAL PAYLOAD INTERCEPTED: Omnipresent Context Widget routed target data to Matrix.", "warning");
+      addSystemLog("System", "External context payload successfully mapped to task input.", "warning");
     }
   }, [setRawInput, addSystemLog]);
 
   return (
-    <div className="h-screen w-full bg-[#fbfaf5] text-[#14171a] flex flex-col font-public-sans antialiased text-sm overflow-hidden select-none">
+    <div className="h-screen w-full bg-brand-bg text-brand-text-primary flex flex-col font-public-sans antialiased text-[14px] overflow-hidden">
 
       {/* 1. Global Header Navigation Frame */}
       <AppHeader
@@ -334,7 +266,7 @@ export default function App() {
       {/* 2. Main 3-Panel Segment */}
       <main className="flex flex-1 overflow-hidden min-h-0 w-full animate-fade-up">
 
-        {/* PANEL A: LEFT SIDEBAR (Navigation & Controls) - Width: 190px shrink-0 */}
+        {/* PANEL A: LEFT SIDEBAR */}
         <Sidebar
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -342,9 +274,8 @@ export default function App() {
           user={user}
         />
 
-        {/* PANEL B: CENTRAL PRIMARY DISPLAY VIEW (Triage, Action Interception, Cards) - Flex adaptive */}
-        <section className="flex-1 p-5 flex flex-col gap-5 bg-[#fbfaf5] overflow-y-auto h-full min-h-0">
-
+        {/* PANEL B: CENTRAL PRIMARY DISPLAY VIEW */}
+        <section className="flex-1 p-6 md:p-8 flex flex-col gap-6 bg-brand-bg overflow-y-auto h-full min-h-0">
           {activeTab === "dashboard" && (
             <DashboardView
               rawInput={rawInput}
@@ -379,20 +310,19 @@ export default function App() {
               onFilterChange={setLogFilter}
             />
           )}
-
         </section>
 
-        {/* PANEL C: RIGHT SIDEBAR (The Execution Proxy Log scrolling feed) - Width: 320px shrink-0 */}
         <TelemetryPanel logs={logs} endRef={logTerminalEndRef} />
 
       </main>
 
+      {/* Modals & Toasts */}
       <IntegrationsModal
         isOpen={showIntegrationsModal}
         onClose={() => setShowIntegrationsModal(false)}
         onCommit={() => {
           setShowIntegrationsModal(false);
-          showToast("Proxy nodes calibrated.");
+          showToast("Proxy nodes successfully synchronized.");
         }}
       />
 
