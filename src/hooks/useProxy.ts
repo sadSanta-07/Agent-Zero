@@ -54,6 +54,38 @@ export function useProxy({
     setTaskScopeWarnings((prev) => ({ ...prev, [taskId]: message }));
   };
 
+  const resolveContactEmail = (rawTo: string) => {
+    if (!rawTo || rawTo.trim() === "") return "placeholder@example.com";
+    const cleanName = rawTo.replace(/[[\]'"]/g, '').trim();
+
+    if (cleanName.includes('@')) return cleanName;
+
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          const val = localStorage.getItem(key);
+          if (val && val.includes('resolvedValue')) {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) {
+              const match = parsed.find(item => 
+                item?.shortcode?.toLowerCase() === cleanName.toLowerCase() || 
+                item?.key?.toLowerCase() === cleanName.toLowerCase()
+              );
+              if (match && match.resolvedValue && match.resolvedValue.includes('@')) {
+                return match.resolvedValue;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Memory matrix lookup bypassed.");
+    }
+    
+    return "placeholder@example.com";
+  };
+
   // 7. Action: Immediate 1-Click Execution Dispatcher
   const handleExecuteProxy = async (task: Task) => {
     setIsDispatching(true);
@@ -68,7 +100,7 @@ export function useProxy({
       const activeToken = localStorage.getItem('google_oauth_token') || localStorage.getItem('google_access_token') || googleAccessToken;
 
       // ---------------------------------------------------------
-      // BRANCH A: MULTI-CHANNEL MITIGATION (Formerly "Shadow Chronos")
+      // BRANCH A: MULTI-CHANNEL MITIGATION (Shadow Chronos)
       // ---------------------------------------------------------
       if (task.isShadowChronos) {
         addSystemLog('Proxy Agent', `DEPLOYING MULTI-CHANNEL MITIGATION: Engaging dual-workflow resolution...`, 'action');
@@ -78,8 +110,8 @@ export function useProxy({
             addSystemLog('Proxy Agent', `Initiating simultaneous Gmail & Calendar REST dispatches...`, 'action');
 
             const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: `Automated Update: ${task.title}`, body: "Automated mitigation deployed." };
-            // FIX: Ensure recipient is never empty for Gmail API
-            const safeRecipient = parsedEmail.to && parsedEmail.to.trim() !== "" ? parsedEmail.to : "placeholder@example.com";
+            
+            const safeRecipient = resolveContactEmail(parsedEmail.to);
             const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
             const gmailPromise = fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
@@ -202,8 +234,7 @@ export function useProxy({
             addSystemLog('Proxy Agent', `Initiating Workspace Gmail API dispatch...`, 'action');
             const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: task.title, body: "Automated task execution." };
 
-            // FIX: Ensure recipient is never empty for Gmail API
-            const safeRecipient = parsedEmail.to && parsedEmail.to.trim() !== "" ? parsedEmail.to : "placeholder@example.com";
+            const safeRecipient = resolveContactEmail(parsedEmail.to);
             const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
             response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
