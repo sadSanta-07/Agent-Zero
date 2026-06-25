@@ -14,19 +14,26 @@ const robustEmailParser = (rawText?: string, title?: string) => {
   let subject = subMatch ? subMatch[1].trim() : "Automated Update";
   let body = bodyMatch ? bodyMatch[1].trim() : rawText;
 
-  if (to === 'team@company.com' || to === 'placeholder@example.com' || !to.includes('@') || to === 'Pending Context...' || to === 'Extracted at runtime') {
+  if (to === 'team@company.com' || to === 'placeholder@example.com' || !to.includes('@') || to.includes('Pending') || to.includes('Extracted')) {
     try {
-      const words = (title || "").toLowerCase().split(/\s+/);
+      const words = (title || "").toLowerCase().split(/[\s,.]+/);
+      
       for (let i = 0; i < localStorage.length; i++) {
         const val = localStorage.getItem(localStorage.key(i) || "");
         if (val && val.includes('resolvedValue')) {
-          const parsed = JSON.parse(val);
-          if (Array.isArray(parsed)) {
-            const match = parsed.find((item: any) => 
-              words.includes((item?.shortcode || "").toLowerCase()) || 
-              words.includes((item?.key || "").toLowerCase())
-            );
-            if (match && match.resolvedValue) to = match.resolvedValue;
+          try {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) {
+              const match = parsed.find((item: any) => 
+                words.includes((item?.shortcode || "").toLowerCase()) || 
+                words.includes((item?.key || "").toLowerCase())
+              );
+              if (match && match.resolvedValue) {
+                to = match.resolvedValue;
+                break;
+              }
+            }
+          } catch(e) {
           }
         }
       }
