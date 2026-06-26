@@ -3,48 +3,18 @@ import { AlertTriangle, CheckCircle, Play, Trash2, Mail, Calendar } from "lucide
 import type { Task } from "../types";
 import { parseEmailDraft } from "../services/email";
 
-const robustEmailParser = (rawText?: string, task?: Task) => {
+const robustEmailParser = (rawText?: string) => {
   if (!rawText) return { to: "operator@internal.system", subject: "Automated Dispatch", body: "" };
 
   const toMatch = rawText.match(/TO:\s*(.*?)(?=\n|SUBJECT:|$)/i);
   const subMatch = rawText.match(/SUBJECT:\s*(.*?)(?=\n|BODY:|$)/i);
   const bodyMatch = rawText.match(/BODY:\s*([\s\S]*)/i);
 
-  let to = toMatch ? toMatch[1].trim() : "";
-  let subject = subMatch ? subMatch[1].trim() : "Automated Update";
-  let body = bodyMatch ? bodyMatch[1].trim() : rawText;
-
-  // The Unbreakable Interceptor
-  if (!to || to === 'team@company.com' || to === 'operator@internal.system' || !to.includes('@') || to.includes('Pending')) {
-    try {
-      // Search the title, the AI-extracted entities, AND the raw text
-      const searchString = `${task?.title || ""} ${task?.entities?.join(" ") || ""} ${rawText}`.toLowerCase();
-      const words = searchString.split(/[\s,.]+/);
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const val = localStorage.getItem(localStorage.key(i) || "");
-        if (val && val.includes('resolvedValue')) {
-          try {
-            const parsed = JSON.parse(val);
-            if (Array.isArray(parsed)) {
-              const match = parsed.find((item: any) =>
-                words.includes((item?.shortcode || "").toLowerCase()) ||
-                words.includes((item?.key || "").toLowerCase())
-              );
-              if (match && match.resolvedValue) {
-                to = match.resolvedValue;
-                break;
-              }
-            }
-          } catch (e) { }
-        }
-      }
-    } catch (e) { }
-  }
-
-  if (!to) to = "operator@internal.system";
-
-  return { to, subject, body };
+  return {
+    to: toMatch ? toMatch[1].trim() : "operator@internal.system",
+    subject: subMatch ? subMatch[1].trim() : "Automated Update",
+    body: bodyMatch ? bodyMatch[1].trim() : rawText
+  };
 };
 
 interface TaskCardProps {
@@ -133,7 +103,7 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
               </span>
             </div>
             {(() => {
-              const { to, subject, body } = robustEmailParser(task.draft, task);
+              const { to, subject, body } = robustEmailParser(task.draft); 
               return (
                 <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1">
                   <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to}</div>
@@ -240,7 +210,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
       {task.draft && (
         <div className="border border-brand-border bg-brand-bg p-4 rounded-[3px] flex flex-col gap-3">
           {(() => {
-            const { to, subject, body } = robustEmailParser(task.draft, task);
+            const { to, subject, body } = robustEmailParser(task.draft);
             return (
               <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary">
                 <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to || "Extracted securely at runtime"}</div>
@@ -293,8 +263,7 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  const parsedEmail = task.draft ? parseEmailDraft(task.draft) : null;
-
+const parsedEmail = task.draft ? robustEmailParser(task.draft) : null;
   return (
     <div id={`ambiguous-card-${task.id}`} className="bg-brand-surface border border-yellow-400 p-5 rounded-[3px] flex flex-col gap-4 shadow-sm">
       <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-[11px] font-space-mono font-medium p-2.5 rounded-xs flex items-center gap-2">

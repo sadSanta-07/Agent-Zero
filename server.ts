@@ -10,7 +10,6 @@ dotenv.config();
 
 const app = express();
 
-// FIX 1: Opened CORS to '*' so local dev and Firebase prod both work seamlessly during the hackathon
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
@@ -27,7 +26,6 @@ const PORT = 3000;
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Initialize Gemini Client server-side
 const apiKey = process.env.GEMINI_API_KEY;
 const isRealApiKey = apiKey && apiKey !== "MY_GEMINI_API_KEY" && apiKey.trim() !== "";
 
@@ -72,7 +70,6 @@ async function generateContentWithFallback(aiInstance: GoogleGenAI, options: { c
   throw lastError || new Error("Failed to invoke any AI model.");
 }
 
-// Helper Utility for Email Formatting
 function makeRawEmail(to: string, from: string, subject: string, message: string) {
   const str = [
     `To: ${to}`,
@@ -214,12 +211,12 @@ app.post("/api/agents/triage", async (req, res) => {
 
   // --- LOCAL SIMULATION FALLBACK ---
   const textLower = rawText.toLowerCase();
-  const isCalendarEvent = textLower.includes("schedule") || 
-                          textLower.includes("calendar") || 
-                          textLower.includes("meeting") || 
-                          textLower.includes("test") || 
-                          textLower.includes("appointment") || 
-                          /am|pm|tomorrow|today/i.test(textLower);
+  const isCalendarEvent = textLower.includes("schedule") ||
+    textLower.includes("calendar") ||
+    textLower.includes("meeting") ||
+    textLower.includes("test") ||
+    textLower.includes("appointment") ||
+    /am|pm|tomorrow|today/i.test(textLower);
 
   const cleanText = rawText.replace(/['"]/g, '');
   const words = cleanText.trim().split(/\s+/);
@@ -238,9 +235,21 @@ app.post("/api/agents/triage", async (req, res) => {
   let targetRecipient = "";
   const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
   const emailsFound = cleanText.match(emailRegex);
+
   if (emailsFound && emailsFound.length > 0) {
     targetRecipient = emailsFound[0];
   }
+  else if (memoryMatrix && Array.isArray(memoryMatrix)) {
+    const words = cleanText.toLowerCase().split(/[\s,.]+/);
+    for (const entity of memoryMatrix) {
+      const key = (entity.key || entity.shortcode || "").toLowerCase();
+      if (key && words.includes(key) && entity.resolvedValue && entity.resolvedValue.includes("@")) {
+        targetRecipient = entity.resolvedValue;
+        break;
+      }
+    }
+  }
+  if (!targetRecipient) targetRecipient = "operator@internal.system";
 
   let draft = "";
   let calendarEvent = null;
@@ -255,10 +264,9 @@ app.post("/api/agents/triage", async (req, res) => {
   }
 
   if (intent_type === 'EMAIL' || intent_type === 'AMBIGUOUS') {
-    draft = `TO: ${targetRecipient || 'team@company.com'}\nSUBJECT: Urgent Update: ${title}\n\nBODY:\n${rawText}`;
+    draft = `TO: ${targetRecipient}\nSUBJECT: Urgent Update: ${title}\n\nBODY:\n${rawText}`;
   }
 
-  // If the AI is dead, use regex to extract the entity and save it to memory anyway.
   let extractedEntities: any[] = [];
   if (intent_type === 'MEMORY' && targetRecipient) {
     const recordIdx = words.findIndex(w => w.toLowerCase() === 'record' || w.toLowerCase() === 'remember');
@@ -282,7 +290,7 @@ app.post("/api/agents/triage", async (req, res) => {
     draft,
     isCalendarEvent: intent_type === 'CALENDAR',
     calendarEvent,
-    extractedEntities, 
+    extractedEntities,
     thoughts: [
       `[Triage Agent] Processing local simulation fallback.`,
       `[Calibrator Agent] Urgency evaluated at ${urgency}/10.`,
