@@ -15,14 +15,14 @@ export function IntegrationsModal({
 
   return (
     // Backdrop: Softened the dark overlay slightly to let the cream background breathe
-    <div className="fixed inset-0 z-50 bg-brand-text-primary/20 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-brand-text-primary/20 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
       
       {/* Modal Container: Using surface color, 3px radius, and your custom fade-up animation */}
-      <div className="bg-brand-surface border border-brand-border max-w-sm w-full p-5 text-left rounded-[3px] flex flex-col gap-5 shadow-sm animate-fade-up">
+      <div className="bg-brand-surface border border-brand-border max-w-sm w-full max-h-[calc(100dvh-1.5rem)] overflow-y-auto p-4 sm:p-5 text-left rounded-[3px] flex flex-col gap-5 shadow-sm animate-fade-up">
         
         {/* Header Section */}
-        <div className="flex justify-between items-center border-b border-brand-border pb-3">
-          <h2 className="text-[24px] font-normal font-fraunces text-brand-text-primary flex items-center gap-2 m-0">
+        <div className="flex justify-between items-center gap-3 border-b border-brand-border pb-3">
+          <h2 className="text-[22px] sm:text-[24px] font-normal font-fraunces text-brand-text-primary flex items-center gap-2 m-0">
             <FolderLock className="w-5 h-5 text-brand-primary" />
             Proxy Nodes
           </h2>
@@ -43,7 +43,7 @@ export function IntegrationsModal({
         <div className="flex flex-col gap-3">
           
           {/* PostgreSQL Node */}
-          <div className="bg-brand-bg border border-brand-border p-3 rounded-[3px] flex items-center justify-between hover:border-brand-text-secondary transition-all-custom">
+          <div className="bg-brand-bg border border-brand-border p-3 rounded-[3px] flex items-center justify-between gap-3 hover:border-brand-text-secondary transition-all-custom">
             <div className="flex items-center gap-2">
               <Database className="w-4 h-4 text-brand-text-secondary" />
               <span className="text-[14px] font-public-sans text-brand-text-primary">PostgreSQL Hook</span>
@@ -55,7 +55,7 @@ export function IntegrationsModal({
           </div>
 
           {/* Gemini API Node */}
-          <div className="bg-brand-bg border border-brand-border p-3 rounded-[3px] flex items-center justify-between hover:border-brand-text-secondary transition-all-custom">
+          <div className="bg-brand-bg border border-brand-border p-3 rounded-[3px] flex items-center justify-between gap-3 hover:border-brand-text-secondary transition-all-custom">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-brand-primary" />
               <span className="text-[14px] font-public-sans text-brand-text-primary">Gemini API Core</span>
@@ -66,7 +66,7 @@ export function IntegrationsModal({
           </div>
 
           {/* Workspace Node */}
-          <div className="bg-brand-bg border border-brand-border p-3 rounded-[3px] flex items-center justify-between hover:border-brand-text-secondary transition-all-custom">
+          <div className="bg-brand-bg border border-brand-border p-3 rounded-[3px] flex items-center justify-between gap-3 hover:border-brand-text-secondary transition-all-custom">
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-brand-text-secondary" />
               <span className="text-[14px] font-public-sans text-brand-text-primary">Workspace Hook</span>

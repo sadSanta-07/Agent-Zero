@@ -17,19 +17,19 @@ export function Sidebar({
   user,
 }: SidebarProps) {
   return (
-    <aside className="w-60 border-r border-brand-border p-6 flex flex-col justify-between shrink-0 h-full bg-brand-bg">
-      <div className="flex flex-col gap-6">
+    <aside className="w-full lg:w-60 border-b lg:border-b-0 lg:border-r border-brand-border p-3 sm:p-4 lg:p-6 flex flex-col sm:flex-row lg:flex-col justify-between gap-3 lg:gap-6 shrink-0 h-auto lg:h-full bg-brand-bg">
+      <div className="flex min-w-0 flex-col gap-3 lg:gap-6">
         
         {/* Navigation Directory */}
         <div>
-          <span className="text-[11px] uppercase tracking-widest font-space-mono text-brand-text-secondary block mb-4">
+          <span className="hidden lg:block text-[11px] uppercase tracking-widest font-space-mono text-brand-text-secondary mb-4">
             Directories
           </span>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-wrap gap-1.5 lg:flex-col">
             
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-all-custom rounded-[3px] text-[14px] font-public-sans ${
+              className={`min-w-max lg:w-full text-left px-3 py-2 flex items-center gap-2.5 lg:gap-3 transition-all-custom rounded-[3px] text-[14px] font-public-sans ${
                 activeTab === 'dashboard' 
                 ? 'bg-brand-surface text-brand-text-primary font-medium' 
                 : 'text-brand-text-secondary hover:bg-brand-surface/60 hover:text-brand-text-primary'
@@ -41,7 +41,7 @@ export function Sidebar({
 
             <button
               onClick={() => setActiveTab('matrix')}
-              className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-all-custom rounded-[3px] text-[14px] font-public-sans ${
+              className={`min-w-max lg:w-full text-left px-3 py-2 flex items-center gap-2.5 lg:gap-3 transition-all-custom rounded-[3px] text-[14px] font-public-sans ${
                 activeTab === 'matrix' 
                 ? 'bg-brand-surface text-brand-text-primary font-medium' 
                 : 'text-brand-text-secondary hover:bg-brand-surface/60 hover:text-brand-text-primary'
@@ -53,7 +53,7 @@ export function Sidebar({
 
             <button
               onClick={() => setActiveTab('logs')}
-              className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-all-custom rounded-[3px] text-[14px] font-public-sans ${
+              className={`min-w-max lg:w-full text-left px-3 py-2 flex items-center gap-2.5 lg:gap-3 transition-all-custom rounded-[3px] text-[14px] font-public-sans ${
                 activeTab === 'logs' 
                 ? 'bg-brand-surface text-brand-text-primary font-medium' 
                 : 'text-brand-text-secondary hover:bg-brand-surface/60 hover:text-brand-text-primary'
@@ -68,14 +68,14 @@ export function Sidebar({
       </div>
 
       {/* System Ops / Integrations */}
-      <div className="flex flex-col gap-3 border-t border-brand-border pt-6 mt-auto">
-        <span className="text-[11px] uppercase tracking-widest font-space-mono text-brand-text-secondary leading-none block">
+      <div className="flex shrink-0 flex-row sm:flex-col gap-2 lg:gap-3 border-t-0 sm:border-t lg:border-t border-brand-border pt-0 sm:pt-3 lg:pt-6 mt-0 lg:mt-auto">
+        <span className="hidden sm:block text-[11px] uppercase tracking-widest font-space-mono text-brand-text-secondary leading-none">
           System Ops
         </span>
         {/* Styled exactly matching the "Secondary Button" specs in design.md */}
         <button
           onClick={onOpenIntegrations}
-          className="w-full text-[14px] font-public-sans font-medium text-brand-text-secondary hover:text-brand-text-primary border border-brand-border bg-brand-bg hover:bg-brand-surface py-2 px-3 flex items-center gap-2.5 transition-all-custom rounded-xs cursor-pointer"
+          className="w-full sm:w-auto lg:w-full whitespace-nowrap text-[14px] font-public-sans font-medium text-brand-text-secondary hover:text-brand-text-primary border border-brand-border bg-brand-bg hover:bg-brand-surface py-2 px-3 flex items-center justify-center gap-2.5 transition-all-custom rounded-xs cursor-pointer"
         >
           <Cpu className="w-4 h-4 text-brand-primary" />
           <span>Proxy Nodes</span>

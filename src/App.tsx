@@ -288,7 +288,7 @@ const { handleExecuteProxy, taskScopeWarnings } = useProxy({
   }
 
   return (
-    <div className="h-screen w-full bg-brand-bg text-brand-text-primary flex flex-col font-public-sans antialiased text-[14px] overflow-hidden">
+    <div className="min-h-dvh lg:h-screen w-full bg-brand-bg text-brand-text-primary flex flex-col font-public-sans antialiased text-[14px] overflow-x-hidden lg:overflow-hidden">
 
       {/* 1. Global Header Navigation Frame */}
       <AppHeader
@@ -300,7 +300,7 @@ const { handleExecuteProxy, taskScopeWarnings } = useProxy({
       />
 
       {/* 2. Main 3-Panel Segment */}
-      <main className="flex flex-1 overflow-hidden min-h-0 w-full animate-fade-up">
+      <main className="flex flex-1 flex-col lg:flex-row overflow-y-auto lg:overflow-hidden min-h-0 w-full animate-fade-up">
 
         {/* PANEL A: LEFT SIDEBAR */}
         <Sidebar
@@ -311,7 +311,7 @@ const { handleExecuteProxy, taskScopeWarnings } = useProxy({
         />
 
         {/* PANEL B: CENTRAL PRIMARY DISPLAY VIEW */}
-        <section className="flex-1 p-6 md:p-8 flex flex-col gap-6 bg-brand-bg overflow-y-auto h-full min-h-0">
+        <section className="flex-1 p-4 sm:p-5 md:p-8 flex flex-col gap-6 bg-brand-bg overflow-visible lg:overflow-y-auto h-auto lg:h-full min-h-0">
           {activeTab === "dashboard" && (
             <DashboardView
               rawInput={rawInput}

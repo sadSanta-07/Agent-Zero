@@ -66,6 +66,7 @@ export function useProxy({
 
     try {
       const activeToken = localStorage.getItem('google_oauth_token') || localStorage.getItem('google_access_token') || googleAccessToken;
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       // ---------------------------------------------------------
       // BRANCH A: MULTI-CHANNEL MITIGATION (Shadow Chronos)
@@ -94,8 +95,14 @@ export function useProxy({
               body: JSON.stringify({
                 summary: task.calendarEvent?.title || `Automated Remediation: ${task.title}`,
                 description: task.calendarEvent?.description || "Automated schedule adjustment to bypass task conflict.",
-                start: { dateTime: task.calendarEvent?.startTime || new Date(Date.now() + 15 * 60 * 1000).toISOString() },
-                end: { dateTime: task.calendarEvent?.endTime || new Date(Date.now() + 45 * 60 * 1000).toISOString() }
+                start: {
+                  dateTime: (task.calendarEvent?.startTime || new Date(Date.now() + 15 * 60 * 1000).toISOString()).replace('Z', ''),
+                  timeZone: userTimeZone
+                },
+                end: {
+                  dateTime: (task.calendarEvent?.endTime || new Date(Date.now() + 45 * 60 * 1000).toISOString()).replace('Z', ''),
+                  timeZone: userTimeZone
+                }
               })
             });
 
@@ -194,8 +201,14 @@ export function useProxy({
               body: JSON.stringify({
                 summary: task.calendarEvent?.title || task.title,
                 description: task.calendarEvent?.description || `Synchronized automated schedule reservation.`,
-                start: { dateTime: task.calendarEvent?.startTime || new Date().toISOString() },
-                end: { dateTime: task.calendarEvent?.endTime || new Date(Date.now() + 3600 * 1000).toISOString() }
+                start: {
+                  dateTime: (task.calendarEvent?.startTime || new Date(Date.now() + 15 * 60 * 1000).toISOString()).replace('Z', ''),
+                  timeZone: userTimeZone
+                },
+                end: {
+                  dateTime: (task.calendarEvent?.endTime || new Date(Date.now() + 45 * 60 * 1000).toISOString()).replace('Z', ''),
+                  timeZone: userTimeZone
+                }
               })
             });
           } else {

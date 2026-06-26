@@ -16,12 +16,12 @@ export function AuditLogsView({
   onFilterChange: setLogFilter,
 }: AuditLogsViewProps) {
   return (
-    <div className="bg-brand-surface border border-brand-border p-6 rounded-[3px] flex flex-col gap-5 shadow-sm">
+    <div className="bg-brand-surface border border-brand-border p-4 sm:p-6 rounded-[3px] flex flex-col gap-5 shadow-sm min-h-0">
       
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-brand-border pb-3">
         <Terminal className="w-5 h-5 text-brand-primary" />
-        <h2 className="text-[20px] font-medium font-fraunces text-brand-text-primary m-0">System Audit Ledger</h2>
+        <h2 className="text-[20px] font-medium font-fraunces text-brand-text-primary m-0 leading-tight">System Audit Ledger</h2>
       </div>
       
       {/* Description */}
@@ -47,13 +47,13 @@ export function AuditLogsView({
       </div>
 
       {/* Light Theme Ledger Window */}
-      <div className="bg-brand-bg border border-brand-border text-brand-text-primary font-space-mono text-[12px] p-4 rounded-[3px] h-87.5 overflow-y-auto flex flex-col gap-2 scrollbar-thin shadow-inner">
+      <div className="bg-brand-bg border border-brand-border text-brand-text-primary font-space-mono text-[12px] p-3 sm:p-4 rounded-[3px] h-[55dvh] min-h-80 lg:h-87.5 overflow-y-auto flex flex-col gap-2 scrollbar-thin shadow-inner">
         {filteredLogs.map((log) => {
           // Check for critical system events (using both old and new terminology to be safe)
           const isCritical = log.message.includes("SHADOW CHRONOS") || log.message.includes("Resolution Deployed");
 
           return (
-            <div key={log.id} className="flex gap-3 items-start leading-relaxed text-left border-b border-brand-border/40 pb-2 last:border-0 last:pb-0">
+            <div key={log.id} className="flex flex-col sm:flex-row gap-1.5 sm:gap-3 sm:items-start leading-relaxed text-left border-b border-brand-border/40 pb-2 last:border-0 last:pb-0">
               
               {/* Timestamp */}
               <span className="text-brand-text-secondary/70 font-medium select-none shrink-0 mt-0.5">

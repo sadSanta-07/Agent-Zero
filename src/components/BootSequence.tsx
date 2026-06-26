@@ -30,9 +30,9 @@ export function BootSequence({ onComplete }: BootSequenceProps) {
     ];
 
     return (
-        <div className="fixed inset-0 z-50 bg-[#0a0a0a] text-[#e5e5e5] flex flex-col items-center justify-center font-space-mono selection:bg-brand-primary/30">
+        <div className="fixed inset-0 z-50 bg-[#0a0a0a] text-[#e5e5e5] flex flex-col items-center justify-center overflow-y-auto font-space-mono selection:bg-brand-primary/30">
 
-            <div className="w-full max-w-4xl px-6 flex flex-col md:flex-row items-center gap-12">
+            <div className="w-full max-w-4xl px-4 py-8 sm:px-6 flex flex-col md:flex-row items-center gap-8 md:gap-12">
 
                 {/* Left Side: The Unamused Mascot */}
                 <div className={`hidden md:block transition-all duration-1000 transform ${step >= 1 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
@@ -52,7 +52,7 @@ export function BootSequence({ onComplete }: BootSequenceProps) {
                             <Terminal className="w-6 h-6" />
                             <span className="text-[12px] uppercase tracking-[0.3em] font-bold">System Initiation</span>
                         </div>
-                        <h1 className="text-[48px] font-fraunces text-white leading-none tracking-tight">
+                        <h1 className="text-[40px] sm:text-[48px] font-fraunces text-white leading-none tracking-tight">
                             AGENT ZERO
                         </h1>
                     </div>
@@ -83,7 +83,7 @@ export function BootSequence({ onComplete }: BootSequenceProps) {
 
                     {/* Step 4: Interaction Phase */}
                     <div className={`w-full transition-all duration-1000 transform ${step >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                        <div className="mt-8 border border-gray-800 bg-[#111] p-5 rounded-xs w-full">
+                        <div className="mt-6 sm:mt-8 border border-gray-800 bg-[#111] p-4 sm:p-5 rounded-xs w-full">
                             <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-4">
                                 Select Simulation Parameter:
                             </div>
@@ -92,7 +92,7 @@ export function BootSequence({ onComplete }: BootSequenceProps) {
                                     <button
                                         key={idx}
                                         onClick={() => onComplete(prompt)}
-                                        className="text-left w-full bg-[#1a1a1a] hover:bg-[#252525] border border-gray-800 hover:border-brand-primary text-gray-300 hover:text-white px-4 py-3 rounded-xs text-[13px] transition-all flex items-center gap-3 group cursor-pointer"
+                                        className="text-left w-full bg-[#1a1a1a] hover:bg-[#252525] border border-gray-800 hover:border-brand-primary text-gray-300 hover:text-white px-3 sm:px-4 py-3 rounded-xs text-[13px] transition-all flex items-start sm:items-center gap-3 group cursor-pointer"
                                     >
                                         <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-brand-primary transition-colors" />
                                         {prompt}

@@ -35,21 +35,21 @@ export function DashboardView({
   onScanInbox: handleScanInbox,
 }: DashboardViewProps) {
   return (
-    <div className="flex flex-col gap-6 min-h-0 h-full">
+    <div className="flex flex-col gap-5 sm:gap-6 min-h-0 h-auto lg:h-full">
 
       {/* Introduction header info */}
       <div className="flex flex-col gap-2 animate-fade-up shrink-0">
-        <h2 className="font-fraunces text-[32px] text-brand-text-primary leading-tight m-0">Triage Zone</h2>
+        <h2 className="font-fraunces text-[28px] sm:text-[32px] text-brand-text-primary leading-tight m-0">Triage Zone</h2>
         <p className="text-[14px] font-public-sans text-brand-text-secondary leading-relaxed max-w-3xl m-0">
           Input unstructured tasks, constraints, or objectives. The automated parser will structure workflows, calculate urgency indexes, and prepare execution drafts.
         </p>
       </div>
 
       {/* Primary Input Container */}
-      <div className="bg-brand-surface border border-brand-border p-5 rounded-[3px] animate-fade-up shadow-sm shrink-0">
+      <div className="bg-brand-surface border border-brand-border p-4 sm:p-5 rounded-[3px] animate-fade-up shadow-sm shrink-0">
         <form onSubmit={handleLaunchTriage} className="flex flex-col gap-4">
 
-          <div className="flex justify-between items-center">
+          <div className="flex flex-wrap justify-between items-center gap-2">
             <label className="text-[11px] uppercase tracking-widest font-space-mono font-bold text-brand-text-secondary">
               Task Input
             </label>
@@ -65,7 +65,7 @@ export function DashboardView({
               value={rawInput}
               onChange={(e) => setRawInput(e.target.value)}
               placeholder='e.g., "Draft an update email to the client regarding the Q3 deliverables, but wait for my approval before sending..."'
-              className="w-full h-24 bg-brand-bg border border-brand-border p-3 pr-12 text-[14px] font-public-sans text-brand-text-primary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary placeholder-brand-text-secondary/60 rounded-xs transition-all-custom resize-none shadow-inner"
+              className="w-full min-h-28 sm:h-24 bg-brand-bg border border-brand-border p-3 pr-12 text-[14px] font-public-sans text-brand-text-primary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary placeholder-brand-text-secondary/60 rounded-xs transition-all-custom resize-y sm:resize-none shadow-inner"
             />
             <div className="absolute right-3 bottom-3 flex items-center gap-2">
               {isRecording ? (
@@ -92,7 +92,7 @@ export function DashboardView({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3 justify-end">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-end">
             <button
               type="button"
               onClick={() => {
@@ -100,7 +100,7 @@ export function DashboardView({
                 handleScanInbox();
               }}
               disabled={isProcessing}
-              className="bg-brand-bg border border-brand-border text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-surface px-4 py-2 text-[13px] font-medium font-public-sans rounded-xs transition-all-custom flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto bg-brand-bg border border-brand-border text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-surface px-4 py-2 text-[13px] font-medium font-public-sans rounded-xs transition-all-custom flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <Inbox className="w-4 h-4" />
               Analyze Inbox
@@ -109,7 +109,7 @@ export function DashboardView({
             <button
               type="submit"
               disabled={isProcessing || !rawInput.trim()}
-              className={`text-[13px] font-medium font-public-sans px-5 py-2 rounded-xs transition-all-custom flex items-center gap-2 cursor-pointer ${!rawInput.trim() || isProcessing
+              className={`w-full sm:w-auto text-[13px] font-medium font-public-sans px-5 py-2 rounded-xs transition-all-custom flex items-center justify-center gap-2 cursor-pointer ${!rawInput.trim() || isProcessing
                 ? 'bg-brand-bg border border-brand-border text-brand-text-secondary/50 cursor-not-allowed'
                 : 'bg-brand-primary text-brand-surface hover:bg-brand-hover border border-transparent shadow-sm'
                 }`}
@@ -131,18 +131,18 @@ export function DashboardView({
 
         {/* Intelligent Agent Progress Stepper */}
         {isProcessing && (
-          <div className="mt-4 border-t border-brand-border pt-4 grid grid-cols-3 gap-3">
+          <div className="mt-4 border-t border-brand-border pt-4 grid grid-cols-3 gap-2 sm:gap-3">
             <div className="flex flex-col items-center text-center gap-2">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-space-mono font-bold transition-colors ${processingStep >= 1 ? 'bg-brand-primary text-brand-surface' : 'bg-brand-bg border border-brand-border text-brand-text-secondary'}`}>1</div>
-              <span className={`text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 1 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Analysis</span>
+              <span className={`text-[9px] sm:text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 1 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Analysis</span>
             </div>
             <div className="flex flex-col items-center text-center gap-2">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-space-mono font-bold transition-colors ${processingStep >= 2 ? 'bg-brand-primary text-brand-surface' : 'bg-brand-bg border border-brand-border text-brand-text-secondary'}`}>2</div>
-              <span className={`text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 2 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Calibration</span>
+              <span className={`text-[9px] sm:text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 2 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Calibration</span>
             </div>
             <div className="flex flex-col items-center text-center gap-2">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-space-mono font-bold transition-colors ${processingStep >= 3 ? 'bg-brand-primary text-brand-surface' : 'bg-brand-bg border border-brand-border text-brand-text-secondary'}`}>3</div>
-              <span className={`text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 3 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Preparation</span>
+              <span className={`text-[9px] sm:text-[10px] font-space-mono uppercase tracking-wider ${processingStep >= 3 ? 'text-brand-text-primary font-bold' : 'text-brand-text-secondary'}`}>Preparation</span>
             </div>
           </div>
         )}
@@ -151,7 +151,7 @@ export function DashboardView({
       {/* Active Workflows List */}
       <div className="flex-1 flex flex-col gap-4 min-h-0">
 
-        <div className="flex justify-between items-center border-b border-brand-border pb-2 shrink-0">
+        <div className="flex flex-wrap justify-between items-center gap-2 border-b border-brand-border pb-2 shrink-0">
           <h3 className="text-[12px] font-space-mono font-bold uppercase tracking-widest text-brand-text-secondary m-0">
             Active Workflows
           </h3>
@@ -161,12 +161,12 @@ export function DashboardView({
         </div>
 
         {tasks.length === 0 ? (
-          <div className="bg-brand-surface border border-dashed border-brand-border p-10 text-center rounded-[3px] flex-1 flex flex-col justify-center items-center">
+          <div className="bg-brand-surface border border-dashed border-brand-border p-6 sm:p-10 text-center rounded-[3px] flex-1 flex flex-col justify-center items-center">
             <div className="text-[24px] font-fraunces text-brand-text-secondary/50 mb-2">System Idle</div>
             <p className="text-[14px] font-public-sans text-brand-text-secondary m-0">Submit a query above to initiate automated task generation.</p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto space-y-5 pr-2 scrollbar-thin">
+          <div className="flex-1 overflow-visible lg:overflow-y-auto space-y-5 lg:pr-2 scrollbar-thin">
             {tasks.map((task) => {
               // 1. Explicitly catch our new AMBIGUOUS status first
               if (task.intent_type === 'AMBIGUOUS') {

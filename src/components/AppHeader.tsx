@@ -18,11 +18,11 @@ export function AppHeader({
   efficiencyIndex = null,
 }: AppHeaderProps) {
   return (
-      <header className="h-18 border-b border-brand-border z-40 bg-brand-bg flex items-center justify-between px-8 sticky top-0">
+      <header className="min-h-16 border-b border-brand-border z-40 bg-brand-bg flex items-center justify-between gap-3 px-4 py-3 sm:px-5 md:px-8 sticky top-0">
         
         {/* Brand & Version Section */}
-        <div className="flex items-center gap-4">
-          <h1 className="text-[24px] font-normal font-['Fraunces'] text-brand-text-primary tracking-tight leading-none flex items-center gap-3 m-0">
+        <div className="flex min-w-0 items-center gap-4">
+          <h1 className="text-[21px] sm:text-[24px] font-normal font-['Fraunces'] text-brand-text-primary tracking-tight leading-none flex flex-wrap items-center gap-2 sm:gap-3 m-0">
             Agent Zero 
             {/* Version Badge */}
             <span className="text-[10px] font-['Public_Sans'] bg-[#f8ecd6] text-[#9a5b00] px-1.5 py-0.5 rounded-xs uppercase tracking-wider font-normal">
@@ -32,7 +32,7 @@ export function AppHeader({
         </div>
 
         {/* Stats & Auth Interface Area */}
-        <div className="flex items-center gap-8">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-5 lg:gap-8">
           
           {/* Efficiency Index - Now Dynamic */}
           <div className="flex flex-col items-end max-md:hidden">
@@ -51,15 +51,15 @@ export function AppHeader({
           <div className="h-8 w-px bg-brand-border max-md:hidden" />
 
           {/* User Controls */}
-          <div className="flex items-center gap-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             {isLoading ? (
               <span className="text-[14px] font-['Public_Sans'] text-brand-text-secondary animate-pulse">
                 Authenticating...
               </span>
             ) : user ? (
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col text-right">
-                  <span className="text-[14px] font-medium font-['Public_Sans'] text-brand-text-primary leading-none">
+              <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+                <div className="hidden xs:flex min-w-0 flex-col text-right sm:flex">
+                  <span className="max-w-28 sm:max-w-40 truncate text-[14px] font-medium font-['Public_Sans'] text-brand-text-primary leading-none">
                     {user.displayName || "Operator"}
                   </span>
                   <span className="text-[12px] font-['Public_Sans'] text-brand-primary leading-none mt-1">
@@ -72,10 +72,10 @@ export function AppHeader({
                     src={user.photoURL} 
                     alt="avatar" 
                     referrerPolicy="no-referrer"
-                    className="w-9 h-9 border border-brand-border rounded-[3px] object-cover" 
+                    className="w-8 h-8 sm:w-9 sm:h-9 border border-brand-border rounded-[3px] object-cover shrink-0" 
                   />
                 ) : (
-                  <div className="w-9 h-9 bg-[#ece8dd] flex items-center justify-center font-medium font-['Public_Sans'] text-brand-text-primary text-[14px] rounded-[3px] border border-brand-border">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#ece8dd] flex items-center justify-center font-medium font-['Public_Sans'] text-brand-text-primary text-[14px] rounded-[3px] border border-brand-border shrink-0">
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                 )}

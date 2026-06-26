@@ -45,19 +45,19 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
         </div>
       )}
 
-      <div className="bg-red-50 border border-red-200 text-red-800 text-[11px] font-space-mono font-medium p-2.5 rounded-xs flex items-center justify-between">
-        <span className="flex items-center gap-2">
+      <div className="bg-red-50 border border-red-200 text-red-800 text-[11px] font-space-mono font-medium p-2.5 rounded-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <span className="flex min-w-0 items-start sm:items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
-          <span className="uppercase tracking-wider">Schedule Conflict Detected // Automated Resolution Active</span>
+          <span className="uppercase tracking-wider break-words">Schedule Conflict Detected // Automated Resolution Active</span>
         </span>
-        <span className="bg-red-700 text-white px-2 py-0.5 text-[10px] rounded-xs animate-pulse font-bold tracking-wider uppercase">
+        <span className="self-start sm:self-auto bg-red-700 text-white px-2 py-0.5 text-[10px] rounded-xs animate-pulse font-bold tracking-wider uppercase">
           Urgent
         </span>
       </div>
 
-      <div className="flex justify-between items-start gap-4 mt-1">
-        <div className="flex-1">
-          <h4 className="text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mt-1">
+        <div className="min-w-0 flex-1">
+          <h4 className="text-[17px] sm:text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary break-words">
             {task.title}
           </h4>
           <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -69,8 +69,8 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
             </span>
           </div>
         </div>
-        <div className="text-right flex items-start gap-6 shrink-0">
-          <div>
+        <div className="flex items-start justify-between sm:justify-end gap-4 sm:gap-6 shrink-0 sm:text-right">
+          <div className="min-w-0">
             <div className="font-space-mono text-[10px] text-brand-text-secondary uppercase tracking-wider whitespace-nowrap">Urgency Index</div>
             <div className="font-space-mono text-[16px] font-bold text-red-700 leading-none mt-1">{(task.urgency || 9.5).toFixed(1)}/10</div>
           </div>
@@ -84,10 +84,10 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
         </div>
       </div>
 
-      <div className="p-3 bg-brand-bg border border-brand-border rounded-xs text-[14px]">
+      <div className="p-3 bg-brand-bg border border-brand-border rounded-xs text-[14px] min-w-0">
         <p className="text-brand-text-secondary leading-relaxed font-public-sans">
           <span className="font-space-mono text-[11px] font-bold uppercase text-brand-text-primary mr-2 tracking-wider">Projected Impact:</span>
-          {task.consequences}
+          <span className="break-words">{task.consequences}</span>
         </p>
       </div>
 
@@ -105,9 +105,9 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
             {(() => {
               const { to, subject, body } = robustEmailParser(task.draft); 
               return (
-                <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1">
-                  <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to}</div>
-                  <div><strong className="text-brand-text-secondary font-medium">Subject:</strong> {subject}</div>
+                <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1 min-w-0">
+                  <div className="break-words"><strong className="text-brand-text-secondary font-medium">To:</strong> {to}</div>
+                  <div className="break-words"><strong className="text-brand-text-secondary font-medium">Subject:</strong> {subject}</div>
                   <div className="border-t border-brand-border pt-2 mt-2 font-space-mono">
                     <span className="whitespace-pre-wrap wrap-break-word leading-relaxed text-[12px] text-brand-text-primary block max-h-24 overflow-y-auto">{body}</span>
                   </div>
@@ -127,8 +127,8 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
                 {task.status === 'executed' ? '✓ REGISTERED' : 'PENDING APPROVAL'}
               </span>
             </div>
-            <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1">
-              <div><strong className="text-brand-text-secondary font-medium">Event:</strong> {task.calendarEvent.title}</div>
+              <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1 min-w-0">
+              <div className="break-words"><strong className="text-brand-text-secondary font-medium">Event:</strong> {task.calendarEvent.title}</div>
               <div><strong className="text-brand-text-secondary font-medium">Date:</strong> {task.calendarEvent.startTime ? new Date(task.calendarEvent.startTime).toLocaleDateString() : 'N/A'}</div>
               <div><strong className="text-brand-text-secondary font-medium">Time:</strong> {task.calendarEvent.startTime ? new Date(task.calendarEvent.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} - {task.calendarEvent.endTime ? new Date(task.calendarEvent.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</div>
               <div className="border-t border-brand-border pt-2 mt-2">
@@ -152,7 +152,7 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
           <div className="flex flex-col gap-3">
             <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2.5 flex items-center justify-center gap-2 text-brand-primary font-space-mono text-[12px] font-medium rounded-xs uppercase">
               <CheckCircle className="w-4 h-4 text-brand-primary shrink-0" />
-              <span className="tracking-wider">Resolution Deployed // Multi-Channel Synchronized</span>
+              <span className="tracking-wider text-center break-words">Resolution Deployed // Multi-Channel Synchronized</span>
             </div>
           </div>
         )}
@@ -169,8 +169,8 @@ export const CalendarCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask, 
     <div className={`bg-brand-surface border border-brand-border p-5 rounded-[3px] flex flex-col gap-4 transition-all-custom relative ${task.status === 'executed' ? 'opacity-85' : 'hover:border-brand-text-secondary'}`}>
       {/* ... (Existing Calendar Code remains exactly the same) ... */}
       <div className="flex justify-between items-start gap-4">
-        <div className="flex-1">
-          <h4 className="text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary">{task.title}</h4>
+        <div className="min-w-0 flex-1">
+          <h4 className="text-[17px] sm:text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary break-words">{task.title}</h4>
         </div>
         <button onClick={() => handleDeleteTask(task.id)} className="text-brand-text-secondary hover:text-red-700 p-1"
           title="Remove Task"
@@ -200,8 +200,8 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
   return (
     <div className={`bg-brand-surface border border-brand-border p-5 rounded-[3px] flex flex-col gap-4 transition-all-custom relative ${task.status === 'executed' ? 'opacity-85' : 'hover:border-brand-text-secondary'}`}>
       <div className="flex justify-between items-start gap-4">
-        <div className="flex-1">
-          <h4 className="text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary">{task.title}</h4>
+        <div className="min-w-0 flex-1">
+          <h4 className="text-[17px] sm:text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary break-words">{task.title}</h4>
         </div>
         <button onClick={() => handleDeleteTask(task.id)} className="text-brand-text-secondary hover:text-red-700 p-1"
           title="Remove Task"
@@ -212,9 +212,9 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
           {(() => {
             const { to, subject, body } = robustEmailParser(task.draft);
             return (
-              <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary">
-                <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to || "Extracted securely at runtime"}</div>
-                <div><strong className="text-brand-text-secondary font-medium">Subject:</strong> {subject}</div>
+              <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary min-w-0">
+                <div className="break-words"><strong className="text-brand-text-secondary font-medium">To:</strong> {to || "Extracted securely at runtime"}</div>
+                <div className="break-words"><strong className="text-brand-text-secondary font-medium">Subject:</strong> {subject}</div>
                 <div className="border-t border-brand-border pt-2 mt-2 font-space-mono">
                   <span className="whitespace-pre-wrap wrap-break-word leading-relaxed text-[12px] text-brand-text-primary block max-h-32 overflow-y-auto">{body || task.draft}</span>
                 </div>
@@ -230,7 +230,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
           ) : (
             <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2.5 flex items-center justify-center gap-2 text-brand-primary font-space-mono text-[12px] font-medium rounded-xs uppercase mt-1">
               <CheckCircle className="w-4 h-4 text-brand-primary shrink-0" />
-              <span className="tracking-wider">Communication Dispatched</span>
+              <span className="tracking-wider text-center break-words">Communication Dispatched</span>
             </div>
           )}
         </div>
@@ -266,16 +266,16 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
 const parsedEmail = task.draft ? robustEmailParser(task.draft) : null;
   return (
     <div id={`ambiguous-card-${task.id}`} className="bg-brand-surface border border-yellow-400 p-5 rounded-[3px] flex flex-col gap-4 shadow-sm">
-      <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-[11px] font-space-mono font-medium p-2.5 rounded-xs flex items-center gap-2">
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-[11px] font-space-mono font-medium p-2.5 rounded-xs flex items-start sm:items-center gap-2">
         <AlertTriangle className="w-4 h-4 shrink-0 text-yellow-600" />
-        <span className="uppercase tracking-wider">Manual Disambiguation Required // Select Execution Routes</span>
+        <span className="uppercase tracking-wider break-words">Manual Disambiguation Required // Select Execution Routes</span>
       </div>
 
-      <div className="flex justify-between items-start gap-4 mt-1">
-        <div className="flex-1">
-          <h4 className="text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary">{task.title}</h4>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mt-1">
+        <div className="min-w-0 flex-1">
+          <h4 className="text-[17px] sm:text-[18px] font-semibold font-fraunces leading-tight text-brand-text-primary break-words">{task.title}</h4>
         </div>
-        <div className="text-right flex items-start gap-6 shrink-0">
+        <div className="flex items-start justify-between sm:justify-end gap-4 sm:gap-6 shrink-0 sm:text-right">
           <div>
             <div className="font-space-mono text-[10px] text-brand-text-secondary uppercase tracking-wider whitespace-nowrap">Urgency Index</div>
             <div className={`font-space-mono text-[16px] font-bold leading-none mt-1 ${task.urgency && task.urgency >= 8 ? 'text-red-700' : 'text-yellow-600'}`}>
@@ -291,7 +291,7 @@ const parsedEmail = task.draft ? robustEmailParser(task.draft) : null;
       <div className="p-3 bg-brand-bg border border-brand-border rounded-xs text-[14px]">
         <p className="text-brand-text-secondary leading-relaxed font-public-sans">
           <span className="font-space-mono text-[11px] font-bold uppercase text-brand-text-primary mr-2 tracking-wider">Projected Impact:</span>
-          {task.consequences}
+          <span className="break-words">{task.consequences}</span>
         </p>
       </div>
 
@@ -312,9 +312,9 @@ const parsedEmail = task.draft ? robustEmailParser(task.draft) : null;
                 <div className={`w-4 h-4 rounded-full border ${routes.email ? 'bg-brand-primary border-brand-primary' : 'border-brand-text-secondary'}`}></div>
               </div>
               {parsedEmail ? (
-                <div className="text-[11px] font-space-mono space-y-1.5 bg-brand-surface p-2 border border-brand-border rounded-xs text-brand-text-primary flex-1">
-                  <div><strong className="text-brand-text-secondary">To:</strong> {parsedEmail.to}</div>
-                  <div><strong className="text-brand-text-secondary">Subj:</strong> {parsedEmail.subject}</div>
+                <div className="text-[11px] font-space-mono space-y-1.5 bg-brand-surface p-2 border border-brand-border rounded-xs text-brand-text-primary flex-1 min-w-0">
+                  <div className="break-words"><strong className="text-brand-text-secondary">To:</strong> {parsedEmail.to}</div>
+                  <div className="break-words"><strong className="text-brand-text-secondary">Subj:</strong> {parsedEmail.subject}</div>
                   <div className="border-t border-brand-border pt-1 mt-1">
                     <span className="whitespace-pre-wrap leading-relaxed block max-h-24 overflow-y-auto">{parsedEmail.body}</span>
                   </div>
@@ -337,8 +337,8 @@ const parsedEmail = task.draft ? robustEmailParser(task.draft) : null;
                 <div className={`w-4 h-4 rounded-full border ${routes.calendar ? 'bg-brand-primary border-brand-primary' : 'border-brand-text-secondary'}`}></div>
               </div>
               {task.calendarEvent ? (
-                <div className="text-[11px] font-space-mono space-y-1.5 bg-brand-surface p-2 border border-brand-border rounded-xs text-brand-text-primary flex-1">
-                  <div><strong className="text-brand-text-secondary">Event:</strong> {task.calendarEvent.title}</div>
+                <div className="text-[11px] font-space-mono space-y-1.5 bg-brand-surface p-2 border border-brand-border rounded-xs text-brand-text-primary flex-1 min-w-0">
+                  <div className="break-words"><strong className="text-brand-text-secondary">Event:</strong> {task.calendarEvent.title}</div>
                   <div><strong className="text-brand-text-secondary">Time:</strong> {new Date(task.calendarEvent.startTime || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   <div className="border-t border-brand-border pt-1 mt-1">
                     <span className="whitespace-pre-wrap leading-relaxed block max-h-24 overflow-y-auto">{task.calendarEvent.description}</span>
@@ -357,7 +357,7 @@ const parsedEmail = task.draft ? robustEmailParser(task.draft) : null;
               }`}
           >
             <Play className={`w-4 h-4 ${(routes.email || routes.calendar) ? 'fill-brand-surface' : ''}`} />
-            <span>{routes.email && routes.calendar ? "Execute Dual Workflow (Shadow Chronos)" : "Execute Selected Route"}</span>
+            <span className="text-center">{routes.email && routes.calendar ? "Execute Dual Workflow (Shadow Chronos)" : "Execute Selected Route"}</span>
           </button>
 
           <button
@@ -370,7 +370,7 @@ const parsedEmail = task.draft ? robustEmailParser(task.draft) : null;
       ) : (
         <div className="bg-brand-surface border border-brand-primary/30 px-3 py-2.5 flex items-center justify-center gap-2 text-brand-primary font-space-mono text-[12px] font-medium rounded-xs uppercase">
           <CheckCircle className="w-4 h-4 text-brand-primary shrink-0" />
-          <span className="tracking-wider">Disambiguation Complete // Executed</span>
+          <span className="tracking-wider text-center break-words">Disambiguation Complete // Executed</span>
         </div>
       )}
     </div>
