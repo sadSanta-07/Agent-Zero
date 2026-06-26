@@ -126,14 +126,16 @@ app.post("/api/agents/triage", async (req, res) => {
          - **ENTITY FIX**: NEVER extract generic verbs (like 'ignore', 'cancel', 'postpone') into email addresses or Entity keys.
       2. **The Calibrator Agent**: Assigns a precise "Urgency Index" score from 0.0 to 10.0.
       3. **The Proxy Agent**: Creates a fully prepared automated workflow draft.
-         - If 'EMAIL', draft the email.
+         - If intent_type is 'EMAIL', draft the email in the \`draft\` field using this EXACT format:
+           TO: <recipient-email-address>
+           SUBJECT: <subject>
+           BODY: <email-text>
          - If 'CALENDAR', construct a Calendar Event.
-         - If 'AMBIGUOUS', draft BOTH the email and the Calendar Event.
+         - If 'AMBIGUOUS', draft BOTH the email (using the exact format above) and the Calendar Event.
          - If 'MEMORY', leave both entirely empty.
 
       Output strictly JSON matching the required schema. Do not add markdown around it.`;
 
-      // FIX 3: Removed strict required constraints on draft and calendarEvent so the AI doesn't crash if it omits one
       const response = await generateContentWithFallback(ai, {
         contents: prompt,
         config: {
@@ -184,12 +186,9 @@ app.post("/api/agents/triage", async (req, res) => {
         const isThreatKeyword = textLower.includes("ignore") || textLower.includes("postpone") || textLower.includes("avoid");
         const isHighStakesContext = textLower.includes("outage") || textLower.includes("production") || textLower.includes("server") || textLower.includes("fired");
 
-        // FIX 4: The Logic Wipeout Bug is completely removed here.
-        // We set it to AMBIGUOUS, but we KEEP the generated drafts!
         if ((isThreatKeyword && isHighStakesContext) || parsedResult.urgency > 8.5) {
           parsedResult.intent_type = 'AMBIGUOUS';
           parsedResult.isShadowChronos = false;
-          // DRAFT AND CALENDAR EVENT ARE PRESERVED FOR THE UI TO DISPLAY!
           parsedResult.thoughts.push(`[Triage Agent] CRITICAL DELAY INTERCEPTED // ROUTING TO DISAMBIGUATION`);
         }
 
@@ -259,7 +258,6 @@ app.post("/api/agents/triage", async (req, res) => {
     draft = `TO: ${targetRecipient || 'team@company.com'}\nSUBJECT: Urgent Update: ${title}\n\nBODY:\n${rawText}`;
   }
 
-  // THE FIX: Smart Offline Extraction!
   // If the AI is dead, use regex to extract the entity and save it to memory anyway.
   let extractedEntities: any[] = [];
   if (intent_type === 'MEMORY' && targetRecipient) {
@@ -284,7 +282,7 @@ app.post("/api/agents/triage", async (req, res) => {
     draft,
     isCalendarEvent: intent_type === 'CALENDAR',
     calendarEvent,
-    extractedEntities, // <-- Now passing the forcefully extracted memory!
+    extractedEntities, 
     thoughts: [
       `[Triage Agent] Processing local simulation fallback.`,
       `[Calibrator Agent] Urgency evaluated at ${urgency}/10.`,
