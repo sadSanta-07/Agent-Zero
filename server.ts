@@ -220,8 +220,7 @@ app.post("/api/agents/triage", async (req, res) => {
 
   const cleanText = rawText.replace(/['"]/g, '');
   const words = cleanText.trim().split(/\s+/);
-  const title = words.slice(0, 5).join(" ") + (words.length > 5 ? "..." : "");
-
+  const title = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
   const isThreatKeyword = textLower.includes("ignore") || textLower.includes("postpone") || textLower.includes("avoid");
   const isHighStakesContext = textLower.includes("outage") || textLower.includes("production") || textLower.includes("server");
 
@@ -254,11 +253,24 @@ app.post("/api/agents/triage", async (req, res) => {
   let draft = "";
   let calendarEvent = null;
 
+  let startHour = 10;
+  const timeMatch = textLower.match(/([1-9]|1[0-2])\s*(am|pm)/);
+  if (timeMatch) {
+    startHour = parseInt(timeMatch[1]);
+    if (timeMatch[2] === 'pm' && startHour < 12) startHour += 12;
+    if (timeMatch[2] === 'am' && startHour === 12) startHour = 0;
+  }
+
+  const daysToAdd = textLower.includes("today") ? 0 : 1;
+  const startDate = new Date(Date.now() + (daysToAdd * 24 * 3600000));
+  startDate.setHours(startHour, 0, 0, 0);
+  const endDate = new Date(startDate.getTime() + 3600000);
+
   if (intent_type === 'CALENDAR' || intent_type === 'AMBIGUOUS') {
     calendarEvent = {
-      title: title || "Scheduled Session",
-      startTime: new Date(Date.now() + 24 * 3600000).toISOString(),
-      endTime: new Date(Date.now() + 24 * 3600000 + 3600000).toISOString(),
+      title: title, // Uses the full, uncut title!
+      startTime: startDate.toISOString(),
+      endTime: endDate.toISOString(),
       description: `Automated calendar reservation.`
     };
   }

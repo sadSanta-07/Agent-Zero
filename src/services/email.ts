@@ -6,26 +6,20 @@ export interface ParsedEmailDraft {
 
 /**
  * Parses an AI-generated raw text draft into structured email components.
- * Safely extracts TO, SUBJECT, and BODY fields using regex pattern matching.
+ * Safely extracts TO, SUBJECT, and BODY fields using unbreakable regex lookaheads.
  */
 export function parseEmailDraft(draft: string): ParsedEmailDraft {
-  if (!draft) return { to: "", subject: "", body: "" };
+  if (!draft) return { to: "operator@internal.system", subject: "Automated Dispatch", body: "" };
 
-  const toMatch = draft.match(/^TO:\s*([^\n]+)/mi);
-  const subjectMatch = draft.match(/^SUBJECT:\s*([^\n]+)/mi);
-  const bodyIndex = draft.toUpperCase().indexOf("BODY:");
-  
-  const body = bodyIndex !== -1
-    ? draft.substring(bodyIndex + 5).trim()
-    : draft
-        .replace(/^TO:\s*[^\n]*\n?/mi, "")
-        .replace(/^SUBJECT:\s*[^\n]*\n?/mi, "")
-        .trim();
+  // THE FIX: Unbreakable regex that stops at a newline OR the next keyword!
+  const toMatch = draft.match(/TO:\s*(.*?)(?=\n|SUBJECT:|$)/i);
+  const subMatch = draft.match(/SUBJECT:\s*(.*?)(?=\n|BODY:|$)/i);
+  const bodyMatch = draft.match(/BODY:\s*([\s\S]*)/i);
 
   return {
-    to: toMatch?.[1].trim() ?? "operator@internal.system",
-    subject: subjectMatch?.[1].trim() ?? "Automated System Dispatch",
-    body,
+    to: toMatch ? toMatch[1].trim() : "operator@internal.system",
+    subject: subMatch ? subMatch[1].trim() : "Automated System Dispatch",
+    body: bodyMatch ? bodyMatch[1].trim() : draft
   };
 }
 
