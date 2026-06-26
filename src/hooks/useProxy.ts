@@ -54,7 +54,7 @@ export function useProxy({
     setTaskScopeWarnings((prev) => ({ ...prev, [taskId]: message }));
   };
 
-  const resolveContactEmail = (rawTo: string, fullDraft?: string, title?: string) => {
+const resolveContactEmail = (rawTo: string, fullDraft?: string, task?: Task) => {
     let cleanName = (rawTo || "").replace(/[[\]'"]/g, '').trim();
 
     if (!cleanName && fullDraft) {
@@ -62,30 +62,34 @@ export function useProxy({
       if (emailRegexMatch) cleanName = emailRegexMatch[0];
     }
 
-    const isGeneric = cleanName === 'team@company.com' || cleanName === 'placeholder@example.com';
+    const isGeneric = !cleanName || cleanName === 'team@company.com' || cleanName === 'operator@internal.system' || cleanName === 'placeholder@example.com' || cleanName.includes('Pending');
 
     try {
-      const searchTerms = [cleanName.toLowerCase(), ...(title || "").toLowerCase().split(/\s+/)];
+      // Search the title, the AI-extracted entities, AND the raw text
+      const searchString = `${cleanName} ${task?.title || ""} ${task?.entities?.join(" ") || ""} ${fullDraft || ""}`.toLowerCase();
+      const words = searchString.split(/[\s,.]+/);
+
       for (let i = 0; i < localStorage.length; i++) {
         const val = localStorage.getItem(localStorage.key(i) || "");
         if (val && val.includes('resolvedValue')) {
-          const parsed = JSON.parse(val);
-          if (Array.isArray(parsed)) {
-            const match = parsed.find(item =>
-              searchTerms.includes((item?.shortcode || "").toLowerCase()) ||
-              searchTerms.includes((item?.key || "").toLowerCase())
-            );
-            if (match && match.resolvedValue && match.resolvedValue.includes('@')) {
-              return match.resolvedValue;
+          try {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) {
+              const match = parsed.find((item: any) => 
+                words.includes((item?.shortcode || "").toLowerCase()) || 
+                words.includes((item?.key || "").toLowerCase())
+              );
+              if (match && match.resolvedValue && match.resolvedValue.includes('@')) {
+                return match.resolvedValue;
+              }
             }
-          }
+          } catch (e) {}
         }
       }
-    } catch (e) { }
+    } catch (e) {}
 
     if (cleanName.includes('@') && !isGeneric) return cleanName;
-
-    return "placeholder@example.com";
+    return "operator@internal.system";
   };
 
   const handleExecuteProxy = async (task: Task) => {
@@ -112,7 +116,7 @@ export function useProxy({
 
             const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: `Automated Update: ${task.title}`, body: "Automated mitigation deployed." };
 
-            const safeRecipient = resolveContactEmail(parsedEmail.to, task.draft, task.title); 
+            const safeRecipient = resolveContactEmail(parsedEmail.to, task.draft, task); 
             const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
             const gmailPromise = fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
@@ -235,7 +239,7 @@ export function useProxy({
             addSystemLog('Proxy Agent', `Initiating Workspace Gmail API dispatch...`, 'action');
             const parsedEmail = task.draft ? parseEmailDraft(task.draft) : { to: "", subject: task.title, body: "Automated task execution." };
 
-            const safeRecipient = resolveContactEmail(parsedEmail.to, task.draft, task.title);
+            const safeRecipient = resolveContactEmail(parsedEmail.to, task.draft, task);
             const emailContent = createRawEmail(safeRecipient, "me", parsedEmail.subject, parsedEmail.body);
 
             response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {

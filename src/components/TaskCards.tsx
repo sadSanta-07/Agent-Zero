@@ -3,29 +3,32 @@ import { AlertTriangle, CheckCircle, Play, Trash2, Mail, Calendar } from "lucide
 import type { Task } from "../types";
 import { parseEmailDraft } from "../services/email";
 
-const robustEmailParser = (rawText?: string, title?: string) => {
-  if (!rawText) return { to: "Pending Context...", subject: "Automated Dispatch", body: "" };
+const robustEmailParser = (rawText?: string, task?: Task) => {
+  if (!rawText) return { to: "operator@internal.system", subject: "Automated Dispatch", body: "" };
 
   const toMatch = rawText.match(/TO:\s*(.*?)(?=\n|SUBJECT:|$)/i);
   const subMatch = rawText.match(/SUBJECT:\s*(.*?)(?=\n|BODY:|$)/i);
   const bodyMatch = rawText.match(/BODY:\s*([\s\S]*)/i);
 
-  let to = toMatch ? toMatch[1].trim() : "Pending Context...";
+  let to = toMatch ? toMatch[1].trim() : "";
   let subject = subMatch ? subMatch[1].trim() : "Automated Update";
   let body = bodyMatch ? bodyMatch[1].trim() : rawText;
 
-  if (to === 'team@company.com' || to === 'placeholder@example.com' || !to.includes('@') || to.includes('Pending') || to.includes('Extracted')) {
+  // The Unbreakable Interceptor
+  if (!to || to === 'team@company.com' || to === 'operator@internal.system' || !to.includes('@') || to.includes('Pending')) {
     try {
-      const words = (title || "").toLowerCase().split(/[\s,.]+/);
-      
+      // Search the title, the AI-extracted entities, AND the raw text
+      const searchString = `${task?.title || ""} ${task?.entities?.join(" ") || ""} ${rawText}`.toLowerCase();
+      const words = searchString.split(/[\s,.]+/);
+
       for (let i = 0; i < localStorage.length; i++) {
         const val = localStorage.getItem(localStorage.key(i) || "");
         if (val && val.includes('resolvedValue')) {
           try {
             const parsed = JSON.parse(val);
             if (Array.isArray(parsed)) {
-              const match = parsed.find((item: any) => 
-                words.includes((item?.shortcode || "").toLowerCase()) || 
+              const match = parsed.find((item: any) =>
+                words.includes((item?.shortcode || "").toLowerCase()) ||
                 words.includes((item?.key || "").toLowerCase())
               );
               if (match && match.resolvedValue) {
@@ -33,15 +36,17 @@ const robustEmailParser = (rawText?: string, title?: string) => {
                 break;
               }
             }
-          } catch(e) {
-          }
+          } catch (e) { }
         }
       }
-    } catch(e) {}
+    } catch (e) { }
   }
+
+  if (!to) to = "operator@internal.system";
 
   return { to, subject, body };
 };
+
 interface TaskCardProps {
   task: Task & { prepDocUrl?: string };
   handleDeleteTask: (id: string) => void;
@@ -128,7 +133,7 @@ export const ShadowChronosCard: React.FC<TaskCardProps> = ({
               </span>
             </div>
             {(() => {
-              const { to, subject, body } = robustEmailParser(task.draft, task.title);
+              const { to, subject, body } = robustEmailParser(task.draft, task);
               return (
                 <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary flex-1">
                   <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to}</div>
@@ -235,7 +240,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
       {task.draft && (
         <div className="border border-brand-border bg-brand-bg p-4 rounded-[3px] flex flex-col gap-3">
           {(() => {
-            const { to, subject, body } = robustEmailParser(task.draft, task.title);
+            const { to, subject, body } = robustEmailParser(task.draft, task);
             return (
               <div className="text-[12px] font-space-mono space-y-1.5 bg-brand-surface p-3 border border-brand-border rounded-xs text-brand-text-primary">
                 <div><strong className="text-brand-text-secondary font-medium">To:</strong> {to || "Extracted securely at runtime"}</div>
@@ -246,7 +251,7 @@ export const EmailProxyCard: React.FC<TaskCardProps> = ({ task, handleDeleteTask
               </div>
             );
           })()}
-          
+
           {task.status !== 'executed' ? (
             <button onClick={async () => handleExecuteProxy(task)} className="w-full bg-brand-primary text-brand-surface hover:bg-brand-hover text-[14px] font-medium py-2.5 px-4 rounded-xs flex items-center justify-center gap-2 cursor-pointer mt-1">
               <Play className="w-4 h-4 fill-brand-surface" />
@@ -282,9 +287,9 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
     if (routes.email && routes.calendar) {
       await handleExecuteProxy({ ...task, isShadowChronos: true });
     } else if (routes.email) {
-      await handleExecuteProxy({ ...task, intent_type: 'EMAIL', calendarEvent: undefined as any }); 
+      await handleExecuteProxy({ ...task, intent_type: 'EMAIL', calendarEvent: undefined as any });
     } else if (routes.calendar) {
-      await handleExecuteProxy({ ...task, intent_type: 'CALENDAR', draft: undefined as any }); 
+      await handleExecuteProxy({ ...task, intent_type: 'CALENDAR', draft: undefined as any });
     }
   };
 
@@ -324,9 +329,9 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
       {task.status !== 'executed' ? (
         <div className="flex flex-col gap-3 mt-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
+
             {/* EMAIL SELECTOR WITH FULL PREVIEW */}
-            <div 
+            <div
               onClick={() => setRoutes(prev => ({ ...prev, email: !prev.email }))}
               className={`p-4 border rounded-[3px] text-left transition-all cursor-pointer flex flex-col h-full ${routes.email ? 'border-brand-primary bg-brand-primary/5' : 'border-brand-border bg-brand-bg hover:border-brand-text-secondary'}`}
             >
@@ -339,11 +344,11 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
               </div>
               {parsedEmail ? (
                 <div className="text-[11px] font-space-mono space-y-1.5 bg-brand-surface p-2 border border-brand-border rounded-xs text-brand-text-primary flex-1">
-                   <div><strong className="text-brand-text-secondary">To:</strong> {parsedEmail.to}</div>
-                   <div><strong className="text-brand-text-secondary">Subj:</strong> {parsedEmail.subject}</div>
-                   <div className="border-t border-brand-border pt-1 mt-1">
-                     <span className="whitespace-pre-wrap leading-relaxed block max-h-24 overflow-y-auto">{parsedEmail.body}</span>
-                   </div>
+                  <div><strong className="text-brand-text-secondary">To:</strong> {parsedEmail.to}</div>
+                  <div><strong className="text-brand-text-secondary">Subj:</strong> {parsedEmail.subject}</div>
+                  <div className="border-t border-brand-border pt-1 mt-1">
+                    <span className="whitespace-pre-wrap leading-relaxed block max-h-24 overflow-y-auto">{parsedEmail.body}</span>
+                  </div>
                 </div>
               ) : (
                 <div className="text-[11px] font-public-sans text-brand-text-secondary">No email draft generated.</div>
@@ -351,7 +356,7 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
             </div>
 
             {/* CALENDAR SELECTOR WITH FULL PREVIEW */}
-            <div 
+            <div
               onClick={() => setRoutes(prev => ({ ...prev, calendar: !prev.calendar }))}
               className={`p-4 border rounded-[3px] text-left transition-all cursor-pointer flex flex-col h-full ${routes.calendar ? 'border-brand-primary bg-brand-primary/5' : 'border-brand-border bg-brand-bg hover:border-brand-text-secondary'}`}
             >
@@ -379,19 +384,18 @@ export const AmbiguousChoiceCard: React.FC<TaskCardProps> = ({
           <button
             onClick={handleExecute}
             disabled={!routes.email && !routes.calendar}
-            className={`w-full py-3 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-public-sans shadow-sm mt-2 ${
-              (routes.email || routes.calendar) ? 'bg-brand-primary text-brand-surface hover:bg-brand-hover cursor-pointer' : 'bg-brand-border text-brand-text-secondary cursor-not-allowed'
-            }`}
+            className={`w-full py-3 px-4 rounded-xs transition-all-custom flex items-center justify-center gap-2 font-public-sans shadow-sm mt-2 ${(routes.email || routes.calendar) ? 'bg-brand-primary text-brand-surface hover:bg-brand-hover cursor-pointer' : 'bg-brand-border text-brand-text-secondary cursor-not-allowed'
+              }`}
           >
             <Play className={`w-4 h-4 ${(routes.email || routes.calendar) ? 'fill-brand-surface' : ''}`} />
             <span>{routes.email && routes.calendar ? "Execute Dual Workflow (Shadow Chronos)" : "Execute Selected Route"}</span>
           </button>
 
           <button
-             onClick={() => handleDeleteTask(task.id)}
-             className="w-full py-2 text-[12px] font-space-mono uppercase tracking-wider text-brand-text-secondary hover:text-brand-text-primary transition-colors mt-1 cursor-pointer"
+            onClick={() => handleDeleteTask(task.id)}
+            className="w-full py-2 text-[12px] font-space-mono uppercase tracking-wider text-brand-text-secondary hover:text-brand-text-primary transition-colors mt-1 cursor-pointer"
           >
-             Acknowledge & Dismiss Task
+            Acknowledge & Dismiss Task
           </button>
         </div>
       ) : (
