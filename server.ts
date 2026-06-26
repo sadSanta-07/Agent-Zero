@@ -106,9 +106,14 @@ app.post("/api/agents/triage", async (req, res) => {
            If the raw text refers to a name or key in this matrix, resolve this name to the stored email address.`
         : "";
 
-      // FIX 2: Updated Prompt to explicitly demand BOTH drafts for AMBIGUOUS tasks
+      const currentDateTime = new Date().toString(); // <-- WE GRAB THE EXACT TIME HERE
+      
       const prompt = `You are the central intelligence core of an enterprise-grade automated triage system designed to intercept unstructured tasks and generate structured execution workflows.
       We have intercepted a new user task or critical blocker: "${rawText}"
+      
+      CRITICAL SYSTEM CONTEXT:
+      The current system date and time is exactly: ${currentDateTime}.
+      You MUST use this exact date and time to calculate all relative deadlines like "today", "tomorrow", or "next week".
       
       ${memoryContext}
       
